@@ -11,6 +11,8 @@ import { usernameValidator, firstNameValidator, emailValidator, isStrongPassword
 import { ERROR_MESSAGES } from "@/constants";
 import { HttpError } from "@/utils/HttpError";
 import { startSession } from "mongoose";
+import Device from "@/Device/deviceModels";
+import validator from "express-validator";
 
 export const upload = multer({ storage: memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 export const UPLOAD_DIR = path.resolve(__dirname, "uploads");
@@ -200,20 +202,6 @@ export const validateRole = (requiredRoles: Array<"Admin" | "User" | "Root">) =>
 
 export const validateRegisterInput = [usernameValidator(), emailValidator(), passwordValidator(), firstNameValidator(), lastNameValidator(), handleValidators, validateAccountExists];
 
-export const getUser = async (req: AccountRequest, res: Response, next: NextFunction) => {
-  try {
-    const accountUserName = req.params.username;
-    if (!accountUserName) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    const account = await Account.findOne({ username: accountUserName });
-    if (!account) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-
-    req.account = account;
-    next();
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const fieldAlreadyExist = (field: "username" | "email") => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const value = field === "username" ? req.body.username : req.body.email;
@@ -248,3 +236,93 @@ export const updateAccountValidators = [
 ];
 
 export const updateProfilePic = [upload.single("profilePic"), validateProfilePic, saveProfilePicToDisk, updateProfilePicDoc];
+
+export const accountLogout = async (req: AccountRequest, res: Response, next: NextFunction) => {
+  try {
+    const decodedToken = req.decodedToken;
+    if (!decodedToken || !decodedToken.id) {
+      throw new HttpError(ERROR_MESSAGES.NO_TOKEN_PROVIDED, 401);
+    }
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      throw new HttpError(ERROR_MESSAGES.NO_TOKEN_PROVIDED, 401);
+    }
+    const blacklistToken = new BlacklistToken({ token, userId: decodedToken.id });
+    blacklistToken.expiresAt = new Date(Date.now() + 60 * 60 * 1000); // Token expires in 1 hour
+    await blacklistToken.save();
+    res.status(200).json({ message: "User logged out successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteAccount = async (req: AccountRequest, res: Response, next: NextFunction) => {
+  try {
+    const user = req.account;
+    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    await user.deleteOne();
+    res.status(200).json({ message: "User account deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getDevices = async (req: AccountRequest, res: Response, next: NextFunction) => {
+  try {
+    const user = req.account;
+    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    const devices = await Device.find({ owner: user._id });
+    const payload = devices.map((device) => ({
+      deviceID: device.deviceID,
+      name: device.name,
+      lastOnline: device.lastOnline,
+      lastLocation: device.lastLocation,
+    }));
+    res.status(200).json(payload);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deviceNameValidator = [
+  validator.body("name").isString().withMessage("Device name must be a string").isLength({ min: 1, max: 50 }).withMessage("Device name must be between 1 and 50 characters"),
+  (req: AccountRequest, res: Response, next: NextFunction) => {
+    try {
+      const errors = validator.validationResult(req);
+      if (!errors.isEmpty())
+        throw new HttpError(
+          errors
+            .array()
+            .map((err) => err.msg)
+            .join(", "),
+          400
+        );
+      next();
+    } catch (error) {
+      next(error);
+    }
+  },
+];
+
+export const updateDevice = async (req: AccountRequest, res: Response, next: NextFunction) => {
+  const session = await startSession();
+  session.startTransaction();
+  try {
+    const { deviceID } = req.params;
+    const user = req.account;
+    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    const device = await Device.findOne({ deviceID: deviceID, owner: user._id });
+    if (!device) throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
+
+    device.name = req.body.name || device.name;
+
+    await device.save({ session });
+    await session.commitTransaction();
+    session.endSession();
+    res.status(200).json({ message: "Device updated successfully", device });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    next(error);
+  }
+};

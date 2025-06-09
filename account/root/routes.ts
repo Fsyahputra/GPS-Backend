@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authAccount, generateToken, getUser, loginLimiter, registerLimiter, updateAccountValidators, validateRegisterInput, validateRole, validateToken } from "../middlewares";
+import { authAccount, generateToken, loginLimiter, registerLimiter, updateAccountValidators, validateRegisterInput, validateRole, validateToken } from "../middlewares";
 import { emailValidator, passwordValidator } from "../validators";
 import { sendRootAccount, updateRootAccount } from "./middlewares";
 const rootRoutes = Router();
@@ -10,7 +10,7 @@ rootRoutes.post("/login", emailValidator(), passwordValidator(), loginLimiter, a
 
 rootRoutes.use(validateToken);
 
-rootRoutes.get("/:username", getUser, sendRootAccount);
-rootRoutes.put("/:username", updateAccountValidators, getUser, updateRootAccount);
+rootRoutes.get("/:username", sendRootAccount);
+rootRoutes.put("/:username", updateAccountValidators, updateRootAccount);
 
 export default rootRoutes;

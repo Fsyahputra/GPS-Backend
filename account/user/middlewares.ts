@@ -7,10 +7,9 @@ import { ERROR_MESSAGES } from "@/constants";
 import type { UserDoc } from "./models";
 import Device from "@/Device/deviceModels";
 import validator from "express-validator";
-import { BlacklistToken } from "../models";
 import { ProfilePic } from "../models";
 
-type UserRequest = Omit<AccountRequest, "account"> & {
+export type UserRequest = Omit<AccountRequest, "account"> & {
   account?: UserDoc;
 };
 
@@ -84,47 +83,6 @@ export const updateUserAccount = async (req: UserRequest, res: Response, next: N
       message: "User account updated successfully",
     });
   } catch (error) {
-    next(error);
-  }
-};
-
-export const deleteUserAccount = async (req: UserRequest, res: Response, next: NextFunction) => {
-  try {
-    const user = req.account;
-    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    await user.deleteOne();
-    res.status(200).json({ message: "User account deleted successfully" });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const registerDevice = async (req: UserRequest, res: Response, next: NextFunction) => {
-  const session = await startSession();
-  try {
-    session.startTransaction();
-
-    const { deviceID } = req.params;
-    const user = req.account;
-    if (!deviceID) throw new HttpError(ERROR_MESSAGES.DEVICE_ID_REQUIRED, 400);
-    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    const device = await Device.findOne({ deviceID: deviceID }).session(session);
-    if (!device) throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
-    if (device.owner) throw new HttpError(ERROR_MESSAGES.DEVICE_ALREADY_REGISTERED, 400);
-    const devicesCount = await Device.countDocuments({ owner: user._id }).session(session);
-    device.name = `ESP Device ${devicesCount + 1}`;
-    device.owner = user._id;
-    device.deviceID = deviceID;
-
-    await device.save({ session: session });
-    user.devices.push(device._id);
-    await user.save({ session: session });
-    await session.commitTransaction();
-    session.endSession();
-    res.status(200).json({ message: "Device registered successfully", device });
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
     next(error);
   }
 };
@@ -232,21 +190,32 @@ export const deviceNameValidator = [
   },
 ];
 
-export const userLogout = async (req: UserRequest, res: Response, next: NextFunction) => {
+export const registerDevice = async (req: UserRequest, res: Response, next: NextFunction) => {
+  const session = await startSession();
+  session.startTransaction();
+
   try {
-    const decodedToken = req.decodedToken;
-    if (!decodedToken || !decodedToken.id) {
-      throw new HttpError(ERROR_MESSAGES.NO_TOKEN_PROVIDED, 401);
-    }
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      throw new HttpError(ERROR_MESSAGES.NO_TOKEN_PROVIDED, 401);
-    }
-    const blacklistToken = new BlacklistToken({ token, userId: decodedToken.id });
-    blacklistToken.expiresAt = new Date(Date.now() + 60 * 60 * 1000); // Token expires in 1 hour
-    await blacklistToken.save();
-    res.status(200).json({ message: "User logged out successfully" });
+    const { deviceID } = req.params;
+    const user = req.account;
+    if (!deviceID) throw new HttpError(ERROR_MESSAGES.DEVICE_ID_REQUIRED, 400);
+    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    const device = await Device.findOne({ deviceID: deviceID }).session(session);
+    if (!device) throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
+    if (device.owner) throw new HttpError(ERROR_MESSAGES.DEVICE_ALREADY_REGISTERED, 400);
+    const devicesCount = await Device.countDocuments({ owner: user._id }).session(session);
+    device.name = `ESP Device ${devicesCount + 1}`;
+    device.owner = user._id;
+    device.deviceID = deviceID;
+
+    await device.save({ session: session });
+    user.devices.push(device._id);
+    await user.save({ session: session });
+    await session.commitTransaction();
+    session.endSession();
+    res.status(200).json({ message: "Device registered successfully", device });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };

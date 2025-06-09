@@ -1,13 +1,17 @@
 import type { NextFunction, Request, Response } from "express";
 import Admin from "./models";
 import Root from "../root/rootModels";
-import { startSession } from "mongoose";
+import { mongo, startSession } from "mongoose";
 import type { AdminDoc } from "./models";
 import type { AccountRequest } from "../middlewares";
 import { HttpError } from "@/utils/HttpError";
 import { ERROR_MESSAGES } from "@/constants";
 import { accountTokenGenerator } from "./service";
 import dotenv from "dotenv";
+import { DEFAULT_PROFILE_PIC, ProfilePic } from "../models";
+import User from "../user/models";
+import Device from "@/Device/deviceModels";
+import mongoose from "mongoose";
 dotenv.config();
 
 interface AdminRequest extends Omit<AccountRequest, "account"> {
@@ -19,6 +23,7 @@ export const createAdminAccount = async (req: AdminRequest, res: Response, next:
   session.startTransaction();
   try {
     const admin = req.account;
+
     if (!admin) throw new HttpError(ERROR_MESSAGES.INVALID_CREDENTIALS, 404);
     const newAdmin = new Admin({
       username: admin.username,
@@ -29,11 +34,20 @@ export const createAdminAccount = async (req: AdminRequest, res: Response, next:
       roles: admin.roles,
       isAccepted: false,
     });
-    const root = await Root.findOne({ username: process.env.ROOT_USERNAME });
+
+    const profilePic = new ProfilePic({
+      owner: admin?._id,
+      pathFile: DEFAULT_PROFILE_PIC,
+    });
+
+    const root = await Root.findOne({ username: process.env.ROOT_USERNAME }).session(session);
     if (!root) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+
     root.AccReq.push(newAdmin._id);
-    await root.save();
-    await newAdmin.save();
+    await root.save({ session });
+    await newAdmin.save({ session });
+    await profilePic.save({ session });
+
     await session.commitTransaction();
     session.endSession();
     res.status(201).json("Admin account created successfully");
@@ -90,6 +104,42 @@ export const updateAdminAccount = async (req: AdminRequest, res: Response, next:
   }
 };
 
+export const updateUserAccount = async (req: AdminRequest, res: Response, next: NextFunction) => {
+  try {
+    const username = req.params.username;
+    const user = await User.findOne({ username }).populate("devices");
+    const deviceIDs = req.body.devices as string[] | undefined;
+    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    const { firstName, lastName, email } = req.body;
+    user.firstName = firstName || user.firstName;
+    user.lastName = lastName || user.lastName;
+    user.email = email || user.email;
+
+    let notFoundDevices: string[] = [];
+    let notFoundDevicesLength: number = 0;
+    let addedDevicesCount = 0;
+
+    if (deviceIDs && deviceIDs.length > 0) {
+      const objectIDs = deviceIDs.map((id) => new mongoose.Types.ObjectId(id));
+      const devices = await Device.find({ _id: { $in: objectIDs } });
+      const foundDeviceSet = new Set(devices.map((device) => device._id.toString()));
+      addedDevicesCount = devices.length;
+      notFoundDevices = deviceIDs.filter((id) => !foundDeviceSet.has(id));
+      notFoundDevicesLength = notFoundDevices.length;
+    }
+
+    await user.save();
+    res.status(200).json({
+      message:
+        `User updated successfully. ` +
+        `${addedDevicesCount} device${addedDevicesCount !== 1 ? "s" : ""} added.` +
+        (notFoundDevicesLength > 0 ? ` ${notFoundDevicesLength} device ID${notFoundDevicesLength !== 1 ? "s were" : " was"} not found: ${notFoundDevices.join(", ")}.` : " All provided device IDs were valid."),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteAdminAccount = async (req: AdminRequest, res: Response, next: NextFunction) => {
   const session = await startSession();
   session.startTransaction();
@@ -122,6 +172,24 @@ export const generateAdminToken = (req: AdminRequest, res: Response, next: NextF
 
     const token = accountTokenGenerator(admin);
     res.status(200).json({ token });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendUserAccount = async (req: AdminRequest, res: Response, next: NextFunction) => {
+  try {
+    const username = req.params.username;
+    const user = await User.findOne({ username }).populate("devices");
+    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    res.status(200).json({
+      username: user.username,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      roles: user.roles,
+      devices: user.devices,
+    });
   } catch (error) {
     next(error);
   }

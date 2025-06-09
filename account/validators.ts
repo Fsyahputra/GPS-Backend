@@ -1,20 +1,39 @@
-import { body, validationResult } from "express-validator";
 import type { Request, Response, NextFunction } from "express";
 import validator from "validator";
 import { HttpError } from "@/utils/HttpError";
 
-export const usernameValidator = (required: boolean = true) => {
-  const validator = body("username").notEmpty().isLength({ min: 3, max: 20 }).withMessage("Username must be between 3 and 20 characters long").trim().escape();
+import { body, param, query, header, cookie, validationResult } from "express-validator";
+
+type LocationType = "body" | "param" | "query" | "header" | "cookie";
+
+const getValidator = (location: LocationType, field: string) => {
+  switch (location) {
+    case "param":
+      return param(field);
+    case "query":
+      return query(field);
+    case "header":
+      return header(field);
+    case "cookie":
+      return cookie(field);
+    case "body":
+    default:
+      return body(field);
+  }
+};
+
+export const usernameValidator = (required: boolean = true, location: LocationType = "body") => {
+  const validator = getValidator(location, "username").notEmpty().isLength({ min: 3, max: 20 }).withMessage("Username must be between 3 and 20 characters long").trim().escape();
   return required ? validator : validator.optional();
 };
 
-export const emailValidator = (required: boolean = true) => {
-  const validator = body("email").trim().normalizeEmail().isEmail().withMessage("Invalid email format");
+export const emailValidator = (required: boolean = true, location: LocationType = "body") => {
+  const validator = getValidator(location, "email").trim().normalizeEmail().isEmail().withMessage("Invalid email format");
   return required ? validator : validator.optional();
 };
 
-export const passwordValidator = (required: boolean = true) => {
-  const validator = body("password")
+export const passwordValidator = (required: boolean = true, location: LocationType = "body") => {
+  const validator = getValidator(location, "password")
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
@@ -22,13 +41,13 @@ export const passwordValidator = (required: boolean = true) => {
   return required ? validator : validator.optional();
 };
 
-export const firstNameValidator = (required: boolean = true) => {
-  const validator = body("firstName").notEmpty().withMessage("First name is required").trim().escape();
+export const firstNameValidator = (required: boolean = true, location: LocationType = "body") => {
+  const validator = getValidator(location, "firstName").notEmpty().withMessage("First name is required").trim().escape();
   return required ? validator : validator.optional();
 };
 
-export const lastNameValidator = (required: boolean = true) => {
-  const validator = body("lastName").notEmpty().withMessage("Last name is required").trim().escape();
+export const lastNameValidator = (required: boolean = true, location: LocationType = "body") => {
+  const validator = getValidator(location, "lastName").notEmpty().withMessage("Last name is required").trim().escape();
   return required ? validator : validator.optional();
 };
 

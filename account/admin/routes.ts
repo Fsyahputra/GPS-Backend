@@ -1,19 +1,35 @@
 import { Router } from "express";
-import { authAccount, generateToken, getUser, loginLimiter, registerLimiter, updateAccountValidators, validateRole, validateToken } from "../middlewares";
+import { accountLogout, authAccount, deleteAccount, deleteProfilePic, deviceNameValidator, loginLimiter, registerLimiter, updateAccountValidators, updateDevice, updateProfilePic, validateRole, validateToken } from "../middlewares";
 import { validateRegisterInput } from "../middlewares";
-import { emailValidator, passwordValidator } from "../validators";
-import { createAdminAccount, deleteAdminAccount, generateAdminToken, sendAdminAccount, updateAdminAccount } from "./middlewares";
-const adminRoutes = Router();
+import { emailValidator, passwordValidator, usernameValidator } from "../validators";
+import { createAdminAccount, deleteAdminAccount, generateAdminToken, sendAdminAccount, updateAdminAccount, validateAdmin, sendUserAccount, updateUserAccount } from "./middlewares";
+const adminAccountRoutes = Router();
+const userRoutes = Router();
+const devicesRoutes = Router();
 
-adminRoutes.post("/register", registerLimiter, validateRegisterInput, createAdminAccount);
-adminRoutes.post("/login", loginLimiter, emailValidator(), passwordValidator(), authAccount, generateAdminToken);
+adminAccountRoutes.post("/register", registerLimiter, validateRegisterInput, createAdminAccount);
+adminAccountRoutes.post("/login", loginLimiter, emailValidator(), passwordValidator(), authAccount, generateAdminToken);
 
-adminRoutes.use(validateToken);
-adminRoutes.use(validateRole(["Admin", "Root"]));
+adminAccountRoutes.use(validateToken);
+adminAccountRoutes.use(validateRole(["Admin", "Root"]));
 
-adminRoutes.put("/:username", updateAccountValidators, getUser, updateAdminAccount);
-adminRoutes.delete("/:username", getUser, deleteAdminAccount);
-adminRoutes.get("/:username", getUser, sendAdminAccount);
-adminRoutes.post("/accept-admin/:username", getUser, validateRole(["Root"]), updateAdminAccount);
+adminAccountRoutes.put("/", updateAccountValidators, updateAdminAccount);
+adminAccountRoutes.delete("/", deleteAdminAccount);
+adminAccountRoutes.get("/", sendAdminAccount);
+adminAccountRoutes.get("/logout", accountLogout);
+adminAccountRoutes.put("/profile-pic", updateProfilePic);
+adminAccountRoutes.delete("/profile-pic", deleteProfilePic);
 
-export default adminRoutes;
+devicesRoutes.get("/", (req, res, next) => {
+  res.status(501).json({ message: "Not implemented yet" });
+});
+devicesRoutes.put("/:deviceID", deviceNameValidator, updateDevice);
+
+userRoutes.get("/", sendUserAccount);
+userRoutes.put("/", updateAccountValidators, updateUserAccount);
+userRoutes.delete("/", deleteAccount);
+
+userRoutes.use("/device/", devicesRoutes);
+adminAccountRoutes.use("/user/:username", validateAdmin, usernameValidator(true, "param"), userRoutes);
+
+export default adminAccountRoutes;

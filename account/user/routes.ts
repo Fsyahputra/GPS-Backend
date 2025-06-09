@@ -1,8 +1,24 @@
 import { Router } from "express";
-import { authAccount, deleteProfilePic, generateToken, loginLimiter, registerLimiter, updateAccountValidators, updateProfilePic, validateRegisterInput, validateRole, validateToken } from "../middlewares";
+import {
+  accountLogout,
+  authAccount,
+  deleteAccount,
+  deleteProfilePic,
+  deviceNameValidator,
+  generateToken,
+  getDevices,
+  loginLimiter,
+  registerLimiter,
+  updateAccountValidators,
+  updateDevice,
+  updateProfilePic,
+  validateRegisterInput,
+  validateRole,
+  validateToken,
+} from "../middlewares";
 import { emailValidator, handleValidators, passwordValidator } from "../validators";
 import { validateAdmin } from "../admin/middlewares";
-import { deleteUserAccount, sendUserAccount, updateUserAccount, registerDevice, getDevices, updateDevice, deviceNameValidator, deleteDevice, createAccount, userLogout } from "./middlewares";
+import { sendUserAccount, updateUserAccount, registerDevice, deleteDevice, createAccount } from "./middlewares";
 
 const userRoutes = Router();
 const deviceRoutes = Router();
@@ -22,8 +38,8 @@ userRoutes.use("/device", deviceRoutes);
 
 userRoutes.get("/", sendUserAccount);
 userRoutes.put("/", updateAccountValidators, updateUserAccount);
-userRoutes.delete("/", deleteUserAccount);
-userRoutes.get("/logout", userLogout);
+userRoutes.delete("/", deleteAccount);
+userRoutes.get("/logout", accountLogout);
 userRoutes.put("/profile-pic", updateProfilePic);
 userRoutes.delete("/profile-pic", deleteProfilePic);
 
