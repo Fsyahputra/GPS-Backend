@@ -11,7 +11,7 @@ import { usernameValidator, firstNameValidator, emailValidator, isStrongPassword
 import { ERROR_MESSAGES } from "@/constants";
 import { HttpError } from "@/utils/HttpError";
 import { startSession } from "mongoose";
-import Device from "@/Device/deviceModels";
+import Device, { type DeviceDoc } from "@/Device/deviceModels";
 import validator from "express-validator";
 
 export const upload = multer({ storage: memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -22,6 +22,7 @@ export interface AccountRequest extends Request {
   file?: Express.Multer.File;
   filepath?: string;
   decodedToken?: AccountTokenPayload;
+  devices?: DeviceDoc[];
 }
 
 export const loginLimiter = rateLimit({
@@ -267,23 +268,6 @@ export const deleteAccount = async (req: AccountRequest, res: Response, next: Ne
   }
 };
 
-export const getDevices = async (req: AccountRequest, res: Response, next: NextFunction) => {
-  try {
-    const user = req.account;
-    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    const devices = await Device.find({ owner: user._id });
-    const payload = devices.map((device) => ({
-      deviceID: device.deviceID,
-      name: device.name,
-      lastOnline: device.lastOnline,
-      lastLocation: device.lastLocation,
-    }));
-    res.status(200).json(payload);
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const deviceNameValidator = [
   validator.body("name").isString().withMessage("Device name must be a string").isLength({ min: 1, max: 50 }).withMessage("Device name must be between 1 and 50 characters"),
   (req: AccountRequest, res: Response, next: NextFunction) => {
@@ -311,7 +295,7 @@ export const updateDevice = async (req: AccountRequest, res: Response, next: Nex
     const { deviceID } = req.params;
     const user = req.account;
     if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    const device = await Device.findOne({ deviceID: deviceID, owner: user._id });
+    const device = req.devices && req.devices.find((d) => d.deviceID === deviceID);
     if (!device) throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
 
     device.name = req.body.name || device.name;
@@ -323,6 +307,35 @@ export const updateDevice = async (req: AccountRequest, res: Response, next: Nex
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
+    next(error);
+  }
+};
+
+export const getDevices = async (req: AccountRequest, res: Response, next: NextFunction) => {
+  try {
+    const user = req.account;
+    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    const devices = await Device.find({ owner: user._id });
+    req.devices = devices;
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendDevices = (req: AccountRequest, res: Response, next: NextFunction) => {
+  try {
+    const devices = req.devices;
+    if (!devices) throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
+    const payload = devices.map((d) => ({
+      deviceID: d.deviceID,
+      name: d.name,
+      lastCommand: d.lastCommand,
+      lastOnline: d.lastOnline,
+    }));
+
+    res.status(200).json(payload);
+  } catch (error) {
     next(error);
   }
 };

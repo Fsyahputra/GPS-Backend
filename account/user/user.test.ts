@@ -449,7 +449,7 @@ describe("User Account Tests", () => {
       });
 
       it("Should register a device", async () => {
-        const response = await supertest(app).post(`${BASE_USER_API}/device/register/${device.deviceID}`).set("Authorization", `Bearer ${token}`);
+        const response = await supertest(app).post(`${BASE_USER_API}/device/${device.deviceID}`).set("Authorization", `Bearer ${token}`);
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty("message", "Device registered successfully");
         const updatedDevice = await Device.findOne({ deviceID: device.deviceID });
@@ -458,7 +458,7 @@ describe("User Account Tests", () => {
       });
 
       it("Should return 404 for non-existing device", async () => {
-        const response = await supertest(app).post(`${BASE_USER_API}/device/register/nonExistingDeviceID`).set("Authorization", `Bearer ${token}`);
+        const response = await supertest(app).post(`${BASE_USER_API}/device/nonExistingDeviceID`).set("Authorization", `Bearer ${token}`);
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty("error");
         expect(response.body.error).toContain("Device Not Found");
@@ -469,18 +469,18 @@ describe("User Account Tests", () => {
         await supertest(app).post(`${BASE_USER_API}/register`).send(otherUser).expect(201);
         const otherUserLoginResponse = await supertest(app).post(`${BASE_USER_API}/login`).send({ email: otherUser.email, password: otherUser.password }).expect(200);
         const otherUserToken = otherUserLoginResponse.body.token;
-        const otherUserRegisterDeviceResponse = await supertest(app).post(`${BASE_USER_API}/device/register/${device.deviceID}`).set("Authorization", `Bearer ${otherUserToken}`);
+        const otherUserRegisterDeviceResponse = await supertest(app).post(`${BASE_USER_API}/device/${device.deviceID}`).set("Authorization", `Bearer ${otherUserToken}`);
         expect(otherUserRegisterDeviceResponse.status).toBe(200);
         expect(otherUserRegisterDeviceResponse.body).toHaveProperty("message", "Device registered successfully");
 
-        const newUserDeviceRegister = await supertest(app).post(`${BASE_USER_API}/device/register/${device.deviceID}`).set("Authorization", `Bearer ${token}`);
+        const newUserDeviceRegister = await supertest(app).post(`${BASE_USER_API}/device/${device.deviceID}`).set("Authorization", `Bearer ${token}`);
         expect(newUserDeviceRegister.status).toBe(400);
         expect(newUserDeviceRegister.body).toHaveProperty("error");
         expect(newUserDeviceRegister.body.error).toContain("Device already registered");
       });
 
       it("Should return 404 for missing device ID", async () => {
-        const response = await supertest(app).post(`${BASE_USER_API}/device/register/`).set("Authorization", `Bearer ${token}`);
+        const response = await supertest(app).post(`${BASE_USER_API}/device/`).set("Authorization", `Bearer ${token}`);
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty("error");
         expect(response.body.error).toContain("Not Found");
@@ -488,7 +488,7 @@ describe("User Account Tests", () => {
 
       it("Should return 401 for non-existing user", async () => {
         const nonExistingUserToken = "nonExistingUserToken";
-        const response = await supertest(app).post(`${BASE_USER_API}/device/register/${device.deviceID}`).set("Authorization", `Bearer ${nonExistingUserToken}`);
+        const response = await supertest(app).post(`${BASE_USER_API}/device/${device.deviceID}`).set("Authorization", `Bearer ${nonExistingUserToken}`);
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty("error");
         expect(response.body.error).toContain("Invalid token");
@@ -498,7 +498,7 @@ describe("User Account Tests", () => {
         const updatedDeviceData = {
           name: "Updated Device Name",
         };
-        const registerResponse = await supertest(app).post(`${BASE_USER_API}/device/register/${device.deviceID}`).set("Authorization", `Bearer ${token}`);
+        const registerResponse = await supertest(app).post(`${BASE_USER_API}/device/${device.deviceID}`).set("Authorization", `Bearer ${token}`);
         expect(registerResponse.status).toBe(200);
         expect(registerResponse.body).toHaveProperty("message", "Device registered successfully");
         const response = await supertest(app).put(`${BASE_USER_API}/device/${device.deviceID}`).set("Authorization", `Bearer ${token}`).send(updatedDeviceData);
@@ -529,7 +529,7 @@ describe("User Account Tests", () => {
         const anotherUserLoginResponse = await supertest(app).post(`${BASE_USER_API}/login`).send({ email: anotherUserData.email, password: anotherUserData.password }).expect(200);
         const anotherUserToken = anotherUserLoginResponse.body.token;
 
-        const registerResponseRealOwner = await supertest(app).post(`${BASE_USER_API}/device/register/${device.deviceID}`).set("Authorization", `Bearer ${token}`);
+        const registerResponseRealOwner = await supertest(app).post(`${BASE_USER_API}/device/${device.deviceID}`).set("Authorization", `Bearer ${token}`);
         expect(registerResponseRealOwner.status).toBe(200);
         expect(registerResponseRealOwner.body).toHaveProperty("message", "Device registered successfully");
 
@@ -546,7 +546,7 @@ describe("User Account Tests", () => {
         const devices = [device1, device2, device3];
         await Device.insertMany(devices.map((d) => new Device(d)));
         for (const d of devices) {
-          const registerResponse = await supertest(app).post(`${BASE_USER_API}/device/register/${d.deviceID}`).set("Authorization", `Bearer ${token}`);
+          const registerResponse = await supertest(app).post(`${BASE_USER_API}/device/${d.deviceID}`).set("Authorization", `Bearer ${token}`);
           expect(registerResponse.status).toBe(200);
           expect(registerResponse.body).toHaveProperty("message", "Device registered successfully");
         }
@@ -565,7 +565,7 @@ describe("User Account Tests", () => {
       });
 
       it("Should delete a device", async () => {
-        const registerResponse = await supertest(app).post(`${BASE_USER_API}/device/register/${device.deviceID}`).set("Authorization", `Bearer ${token}`);
+        const registerResponse = await supertest(app).post(`${BASE_USER_API}/device/${device.deviceID}`).set("Authorization", `Bearer ${token}`);
         expect(registerResponse.status).toBe(200);
         expect(registerResponse.body).toHaveProperty("message", "Device registered successfully");
 
@@ -582,7 +582,7 @@ describe("User Account Tests", () => {
         const anotherUserLoginResponse = await supertest(app).post(`${BASE_USER_API}/login`).send({ email: anotherUserData.email, password: anotherUserData.password }).expect(200);
         const anotherUserToken = anotherUserLoginResponse.body.token;
 
-        const registerResponseRealOwner = await supertest(app).post(`${BASE_USER_API}/device/register/${device.deviceID}`).set("Authorization", `Bearer ${token}`);
+        const registerResponseRealOwner = await supertest(app).post(`${BASE_USER_API}/device/${device.deviceID}`).set("Authorization", `Bearer ${token}`);
         expect(registerResponseRealOwner.status).toBe(200);
         expect(registerResponseRealOwner.body).toHaveProperty("message", "Device registered successfully");
 

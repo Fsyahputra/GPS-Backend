@@ -87,46 +87,6 @@ export const updateUserAccount = async (req: UserRequest, res: Response, next: N
   }
 };
 
-export const getDevices = async (req: UserRequest, res: Response, next: NextFunction) => {
-  try {
-    const user = req.account;
-    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    const devices = await Device.find({ owner: user._id });
-    const payload = devices.map((device) => ({
-      deviceID: device.deviceID,
-      name: device.name,
-      lastOnline: device.lastOnline,
-      lastLocation: device.lastLocation,
-    }));
-    res.status(200).json(payload);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const updateDevice = async (req: UserRequest, res: Response, next: NextFunction) => {
-  const session = await startSession();
-  session.startTransaction();
-  try {
-    const { deviceID } = req.params;
-    const user = req.account;
-    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    const device = await Device.findOne({ deviceID: deviceID, owner: user._id });
-    if (!device) throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
-
-    device.name = req.body.name || device.name;
-
-    await device.save({ session });
-    await session.commitTransaction();
-    session.endSession();
-    res.status(200).json({ message: "Device updated successfully", device });
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    next(error);
-  }
-};
-
 export const deleteDevice = async (req: UserRequest, res: Response, next: NextFunction) => {
   const session = await startSession();
   session.startTransaction();
@@ -134,7 +94,7 @@ export const deleteDevice = async (req: UserRequest, res: Response, next: NextFu
     const { deviceID } = req.params;
     const user = req.account;
     if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    const device = await Device.findOne({ deviceID: deviceID, owner: user._id });
+    const device = req.devices && req.devices.find((d) => d.deviceID === deviceID);
     if (!device) throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
 
     await device.deleteOne({ session });
@@ -150,45 +110,6 @@ export const deleteDevice = async (req: UserRequest, res: Response, next: NextFu
     next(error);
   }
 };
-
-export const getDeviceById = async (req: UserRequest, res: Response, next: NextFunction) => {
-  try {
-    const { deviceID } = req.params;
-    const user = req.account;
-    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    const device = await Device.findOne({ deviceID: deviceID, owner: user._id });
-    if (!device) throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
-    res.status(200).json({
-      deviceID: device.deviceID,
-      name: device.name,
-      lastOnline: device.lastOnline,
-      lastLocation: device.lastLocation,
-      softwareVersion: device.softwareVersion,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const deviceNameValidator = [
-  validator.body("name").isString().withMessage("Device name must be a string").isLength({ min: 1, max: 50 }).withMessage("Device name must be between 1 and 50 characters"),
-  (req: UserRequest, res: Response, next: NextFunction) => {
-    try {
-      const errors = validator.validationResult(req);
-      if (!errors.isEmpty())
-        throw new HttpError(
-          errors
-            .array()
-            .map((err) => err.msg)
-            .join(", "),
-          400
-        );
-      next();
-    } catch (error) {
-      next(error);
-    }
-  },
-];
 
 export const registerDevice = async (req: UserRequest, res: Response, next: NextFunction) => {
   const session = await startSession();

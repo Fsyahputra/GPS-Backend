@@ -9,6 +9,7 @@ import {
   getDevices,
   loginLimiter,
   registerLimiter,
+  sendDevices,
   updateAccountValidators,
   updateDevice,
   updateProfilePic,
@@ -22,6 +23,7 @@ import { sendUserAccount, updateUserAccount, registerDevice, deleteDevice, creat
 
 const userRoutes = Router();
 const deviceRoutes = Router();
+const deviceIdRoutes = Router({ mergeParams: true });
 userRoutes.post("/register", registerLimiter, validateRegisterInput, createAccount);
 userRoutes.post("/login", loginLimiter, emailValidator(), passwordValidator(), handleValidators, authAccount, generateToken);
 
@@ -29,12 +31,15 @@ userRoutes.use(validateToken);
 userRoutes.use(validateRole(["User", "Admin", "Root"]));
 userRoutes.use(validateAdmin);
 
-deviceRoutes.post("/register/:deviceID", registerDevice);
-deviceRoutes.get("/", getDevices);
-deviceRoutes.delete("/:deviceID", deleteDevice);
-deviceRoutes.put("/:deviceID", deviceNameValidator, updateDevice);
+deviceRoutes.post("/:deviceID", registerDevice);
+deviceRoutes.get("/", getDevices, sendDevices);
 
-userRoutes.use("/device", deviceRoutes);
+deviceIdRoutes.use(getDevices);
+deviceIdRoutes.delete("/", deleteDevice);
+deviceIdRoutes.put("/", deviceNameValidator, updateDevice);
+
+deviceRoutes.use("/:deviceID", deviceIdRoutes);
+userRoutes.use("/device/", deviceRoutes);
 
 userRoutes.get("/", sendUserAccount);
 userRoutes.put("/", updateAccountValidators, updateUserAccount);

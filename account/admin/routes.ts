@@ -2,7 +2,7 @@ import { Router } from "express";
 import { accountLogout, authAccount, deleteAccount, deleteProfilePic, deviceNameValidator, loginLimiter, registerLimiter, updateAccountValidators, updateDevice, updateProfilePic, validateRole, validateToken } from "../middlewares";
 import { validateRegisterInput } from "../middlewares";
 import { emailValidator, passwordValidator, usernameValidator } from "../validators";
-import { createAdminAccount, deleteAdminAccount, generateAdminToken, sendAdminAccount, updateAdminAccount, validateAdmin, sendUserAccount, updateUserAccount } from "./middlewares";
+import { createAdminAccount, deleteAdminAccount, generateAdminToken, sendAdminAccount, updateAdminAccount, validateAdmin, sendUserAccount, updateUserAccount, getUser } from "./middlewares";
 const adminAccountRoutes = Router();
 const userRoutes = Router();
 const devicesRoutes = Router();
@@ -30,6 +30,6 @@ userRoutes.put("/", updateAccountValidators, updateUserAccount);
 userRoutes.delete("/", deleteAccount);
 
 userRoutes.use("/device/", devicesRoutes);
-adminAccountRoutes.use("/user/:username", validateAdmin, usernameValidator(true, "param"), userRoutes);
+adminAccountRoutes.use("/user/:username", validateAdmin, usernameValidator(true, "param"), getUser, userRoutes);
 
 export default adminAccountRoutes;

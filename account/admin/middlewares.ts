@@ -9,13 +9,15 @@ import { ERROR_MESSAGES } from "@/constants";
 import { accountTokenGenerator } from "./service";
 import dotenv from "dotenv";
 import { DEFAULT_PROFILE_PIC, ProfilePic } from "../models";
-import User from "../user/models";
-import Device from "@/Device/deviceModels";
+import User, { type UserDoc } from "../user/models";
+import Device, { type DeviceDoc } from "@/Device/deviceModels";
 import mongoose from "mongoose";
 dotenv.config();
 
 interface AdminRequest extends Omit<AccountRequest, "account"> {
   account?: AdminDoc;
+  user?: UserDoc;
+  devices?: DeviceDoc[];
 }
 
 export const createAdminAccount = async (req: AdminRequest, res: Response, next: NextFunction) => {
@@ -106,7 +108,8 @@ export const updateAdminAccount = async (req: AdminRequest, res: Response, next:
 
 export const updateUserAccount = async (req: AdminRequest, res: Response, next: NextFunction) => {
   try {
-    const username = req.params.username;
+    const username = req.user?.username;
+    if (!username) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
     const user = await User.findOne({ username }).populate("devices");
     const deviceIDs = req.body.devices as string[] | undefined;
     if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
@@ -177,10 +180,21 @@ export const generateAdminToken = (req: AdminRequest, res: Response, next: NextF
   }
 };
 
-export const sendUserAccount = async (req: AdminRequest, res: Response, next: NextFunction) => {
+export const getUser = async (req: AdminRequest, res: Response, next: NextFunction) => {
   try {
     const username = req.params.username;
     const user = await User.findOne({ username }).populate("devices");
+    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    req.user = user;
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendUserAccount = async (req: AdminRequest, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user;
     if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
     res.status(200).json({
       username: user.username,
@@ -190,6 +204,18 @@ export const sendUserAccount = async (req: AdminRequest, res: Response, next: Ne
       roles: user.roles,
       devices: user.devices,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getDevices = async (req: AdminRequest, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user;
+    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    const devices = await Device.find({ owner: user._id });
+    req.devices = devices;
+    next();
   } catch (error) {
     next(error);
   }
