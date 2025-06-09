@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { accountLogout, authAccount, deleteAccount, deleteProfilePic, deviceNameValidator, loginLimiter, registerLimiter, validateUpdateInput, updateDevice, updateProfilePic, validateRole, validateToken } from "../middlewares";
+import { accountLogout, authAccount, deleteAccount, deleteProfilePic, loginLimiter, registerLimiter, validateUpdateInput, updateDevice, updateProfilePic, validateRole, validateToken } from "../middlewares";
 import { validateRegisterInput } from "../middlewares";
-import { emailValidator, passwordValidator, usernameValidator } from "../validators";
+import { deviceNameValidators, emailValidator, passwordValidator, usernameValidator } from "../validators";
 import { createAdminAccount, deleteAdminAccount, generateAdminToken, sendAdminAccount, updateAdminAccount, validateAdmin, sendUserAccount, updateUserAccount, getUser, getDevices } from "./middlewares";
 const adminAccountRoutes = Router();
 const userRoutes = Router();
@@ -23,7 +23,7 @@ adminAccountRoutes.delete("/profile-pic", deleteProfilePic);
 devicesRoutes.get("/", (req, res, next) => {
   res.status(501).json({ message: "Not implemented yet" });
 });
-devicesRoutes.put("/:deviceID", deviceNameValidator, updateDevice);
+devicesRoutes.put("/:deviceID", deviceNameValidators, updateDevice);
 
 userRoutes.get("/", sendUserAccount);
 userRoutes.put("/", validateUpdateInput, updateUserAccount);

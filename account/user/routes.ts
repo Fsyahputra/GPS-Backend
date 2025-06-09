@@ -4,7 +4,6 @@ import {
   authAccount,
   deleteAccount,
   deleteProfilePic,
-  deviceNameValidator,
   generateToken,
   getDevices,
   loginLimiter,
@@ -17,7 +16,7 @@ import {
   validateToken,
   validateUpdateInput,
 } from "../middlewares";
-import { emailValidator, handleValidators, passwordValidator } from "../validators";
+import { deviceNameValidators, emailValidator, handleValidators, passwordValidator } from "../validators";
 import { validateAdmin } from "../admin/middlewares";
 import { sendUserAccount, updateUserAccount, registerDevice, deleteDevice, createAccount } from "./middlewares";
 
@@ -36,7 +35,7 @@ deviceRoutes.get("/", getDevices, sendDevices);
 
 deviceIdRoutes.use(getDevices);
 deviceIdRoutes.delete("/", deleteDevice);
-deviceIdRoutes.put("/", deviceNameValidator, updateDevice);
+deviceIdRoutes.put("/", deviceNameValidators, updateDevice);
 
 deviceRoutes.use("/:deviceID", deviceIdRoutes);
 userRoutes.use("/device/", deviceRoutes);

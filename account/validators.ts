@@ -50,6 +50,11 @@ export const lastNameValidator = (required: boolean = true, location: LocationTy
   return required ? validator : validator.optional();
 };
 
+export const deviceNameValidatorTest = (required: boolean = true, location: LocationType = "body") => {
+  const validator = getValidator(location, "name").isString().withMessage("Device name must be a string").isLength({ min: 1, max: 50 }).withMessage("Device name must be between 1 and 50 characters");
+  return required ? validator : validator.optional();
+};
+
 export const handleValidators = (req: Request, res: Response, next: NextFunction) => {
   try {
     const errors = validationResult(req);
@@ -86,3 +91,4 @@ export const isStrongPassword = (password: string) =>
 export const updateAccountValidators = [usernameValidator(false), emailValidator(false), passwordValidator(false), firstNameValidator(false), lastNameValidator(false), handleValidators];
 
 export const registerValidators = [usernameValidator(), emailValidator(), passwordValidator(), firstNameValidator(), lastNameValidator(), handleValidators];
+export const deviceNameValidators = [deviceNameValidatorTest(), handleValidators];

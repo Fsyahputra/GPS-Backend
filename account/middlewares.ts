@@ -256,26 +256,6 @@ export const deleteAccount = async (req: AccountRequest, res: Response, next: Ne
   }
 };
 
-export const deviceNameValidator = [
-  validator.body("name").isString().withMessage("Device name must be a string").isLength({ min: 1, max: 50 }).withMessage("Device name must be between 1 and 50 characters"),
-  (req: AccountRequest, res: Response, next: NextFunction) => {
-    try {
-      const errors = validator.validationResult(req);
-      if (!errors.isEmpty())
-        throw new HttpError(
-          errors
-            .array()
-            .map((err) => err.msg)
-            .join(", "),
-          400
-        );
-      next();
-    } catch (error) {
-      next(error);
-    }
-  },
-];
-
 export const updateDevice = async (req: AccountRequest, res: Response, next: NextFunction) => {
   const session = await startSession();
   session.startTransaction();
