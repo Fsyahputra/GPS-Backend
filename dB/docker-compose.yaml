@@ -1,0 +1,69 @@
+services:
+  mongo1:
+    container_name: mongo1
+    image: mongo:8
+    ports:
+      - "1235:27017"
+    command: ["mongod", "--replSet", "GPS-Tracker-Test", "--bind_ip_all"]
+    networks:
+      - mongo_replica_set
+    volumes:
+      - mongo1_data:/data/db
+
+  mongo2:
+    container_name: mongo2
+    image: mongo:8
+    ports:
+      - "1236:27017"
+    command: ["mongod", "--replSet", "GPS-Tracker-Test", "--bind_ip_all"]
+    networks:
+      - mongo_replica_set
+    volumes:
+      - mongo2_data:/data/db
+
+  mongo3:
+    container_name: mongo3
+    image: mongo:8
+    ports:
+      - "1237:27017"
+    command: ["mongod", "--replSet", "GPS-Tracker-Test", "--bind_ip_all"]
+    networks:
+      - mongo_replica_set
+    volumes:
+      - mongo3_data:/data/db
+
+  mongo-init:
+    image: mongo:8
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    entrypoint: ["sh", "-c"]
+    command: |
+      "
+      until mongosh --host mongo1 --eval 'db.adminCommand(\"ping\")'; do
+        sleep 2
+      done
+
+      mongosh --host mongo1 --eval '
+        rs.initiate({
+          _id: \"GPS-Tracker-Test\",
+          members: [
+            { _id: 0, host: \"110.139.133.37:1235\" },
+            { _id: 1, host: \"110.139.133.37:1236\" },
+            { _id: 2, host: \"110.139.133.37:1237\" }
+          ]
+        });
+      '
+      "
+    networks:
+      - mongo_replica_set
+
+networks:
+  mongo_replica_set:
+    driver: bridge
+
+volumes:
+  mongo1_data:
+  mongo2_data:
+  mongo3_data:
