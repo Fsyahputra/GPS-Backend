@@ -10,12 +10,12 @@ import {
   loginLimiter,
   registerLimiter,
   sendDevices,
-  updateAccountValidators,
   updateDevice,
   updateProfilePic,
   validateRegisterInput,
   validateRole,
   validateToken,
+  validateUpdateInput,
 } from "../middlewares";
 import { emailValidator, handleValidators, passwordValidator } from "../validators";
 import { validateAdmin } from "../admin/middlewares";
@@ -42,7 +42,7 @@ deviceRoutes.use("/:deviceID", deviceIdRoutes);
 userRoutes.use("/device/", deviceRoutes);
 
 userRoutes.get("/", sendUserAccount);
-userRoutes.put("/", updateAccountValidators, updateUserAccount);
+userRoutes.put("/", validateUpdateInput, updateUserAccount);
 userRoutes.delete("/", deleteAccount);
 userRoutes.get("/logout", accountLogout);
 userRoutes.put("/profile-pic", updateProfilePic);

@@ -7,7 +7,7 @@ import multer, { memoryStorage } from "multer";
 import { accountTokenGenerator, verifyAccountToken, saveFileToDisk, isRoleValid, checkFieldExistence, deleteFileFromDisk } from "./service";
 import { isImageValid } from "@/utils/fileUtils";
 import path from "path";
-import { usernameValidator, firstNameValidator, emailValidator, isStrongPassword, isValidEmail, handleValidators, lastNameValidator, passwordValidator } from "./validators";
+import { usernameValidator, firstNameValidator, emailValidator, isStrongPassword, isValidEmail, handleValidators, lastNameValidator, passwordValidator, updateAccountValidators, registerValidators } from "./validators";
 import { ERROR_MESSAGES } from "@/constants";
 import { HttpError } from "@/utils/HttpError";
 import { startSession } from "mongoose";
@@ -201,8 +201,7 @@ export const validateRole = (requiredRoles: Array<"Admin" | "User" | "Root">) =>
   };
 };
 
-export const validateRegisterInput = [usernameValidator(), emailValidator(), passwordValidator(), firstNameValidator(), lastNameValidator(), handleValidators, validateAccountExists];
-
+export const validateRegisterInput = [...registerValidators, validateAccountExists];
 export const fieldAlreadyExist = (field: "username" | "email") => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const value = field === "username" ? req.body.username : req.body.email;
@@ -224,17 +223,6 @@ export const fieldAlreadyExist = (field: "username" | "email") => {
     }
   };
 };
-
-export const updateAccountValidators = [
-  usernameValidator(false),
-  emailValidator(false),
-  passwordValidator(false),
-  firstNameValidator(false),
-  lastNameValidator(false),
-  handleValidators,
-  fieldAlreadyExist("username"),
-  fieldAlreadyExist("email"),
-];
 
 export const updateProfilePic = [upload.single("profilePic"), validateProfilePic, saveProfilePicToDisk, updateProfilePicDoc];
 
@@ -339,3 +327,5 @@ export const sendDevices = (req: AccountRequest, res: Response, next: NextFuncti
     next(error);
   }
 };
+
+export const validateUpdateInput = [...updateAccountValidators, fieldAlreadyExist("username"), fieldAlreadyExist("email")];

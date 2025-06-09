@@ -21,7 +21,6 @@ const getValidator = (location: LocationType, field: string) => {
       return body(field);
   }
 };
-
 export const usernameValidator = (required: boolean = true, location: LocationType = "body") => {
   const validator = getValidator(location, "username").notEmpty().isLength({ min: 3, max: 20 }).withMessage("Username must be between 3 and 20 characters long").trim().escape();
   return required ? validator : validator.optional();
@@ -83,3 +82,7 @@ export const isStrongPassword = (password: string) =>
     minNumbers: 1,
     minSymbols: 0,
   });
+
+export const updateAccountValidators = [usernameValidator(false), emailValidator(false), passwordValidator(false), firstNameValidator(false), lastNameValidator(false), handleValidators];
+
+export const registerValidators = [usernameValidator(), emailValidator(), passwordValidator(), firstNameValidator(), lastNameValidator(), handleValidators];
