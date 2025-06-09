@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { authAccount, generateToken, loginLimiter, registerLimiter, updateAccountValidators, validateRegisterInput, validateRole, validateToken } from "../middlewares";
-import { emailValidator, passwordValidator } from "../validators";
+import { authAccount, generateToken, loginLimiter, registerLimiter, validateRegisterInput, validateRole, validateToken } from "../middlewares";
+import { emailValidator, passwordValidator, updateAccountValidators } from "../validators";
 import { sendRootAccount, updateRootAccount } from "./middlewares";
 const rootRoutes = Router();
 
