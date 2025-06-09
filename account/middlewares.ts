@@ -7,12 +7,11 @@ import multer, { memoryStorage } from "multer";
 import { accountTokenGenerator, verifyAccountToken, saveFileToDisk, isRoleValid, checkFieldExistence, deleteFileFromDisk } from "./service";
 import { isImageValid } from "@/utils/fileUtils";
 import path from "path";
-import { usernameValidator, firstNameValidator, emailValidator, isStrongPassword, isValidEmail, handleValidators, lastNameValidator, passwordValidator, updateAccountValidators, registerValidators } from "./validators";
+import { updateAccountValidators, registerValidators } from "./validators";
 import { ERROR_MESSAGES } from "@/constants";
 import { HttpError } from "@/utils/HttpError";
 import { startSession } from "mongoose";
 import Device, { type DeviceDoc } from "@/Device/deviceModels";
-import validator from "express-validator";
 
 export const upload = multer({ storage: memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 export const UPLOAD_DIR = path.resolve(__dirname, "uploads");

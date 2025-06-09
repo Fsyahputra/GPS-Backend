@@ -1,14 +1,14 @@
 import { Router } from "express";
 import { accountLogout, authAccount, deleteAccount, deleteProfilePic, loginLimiter, registerLimiter, validateUpdateInput, updateDevice, updateProfilePic, validateRole, validateToken } from "../middlewares";
 import { validateRegisterInput } from "../middlewares";
-import { deviceNameValidators, emailValidator, passwordValidator, usernameValidator } from "../validators";
+import { deviceNameValidators, loginValidators, usernameValidator } from "../validators";
 import { createAdminAccount, deleteAdminAccount, generateAdminToken, sendAdminAccount, updateAdminAccount, validateAdmin, sendUserAccount, updateUserAccount, getUser, getDevices } from "./middlewares";
 const adminAccountRoutes = Router();
 const userRoutes = Router();
 const devicesRoutes = Router();
 
 adminAccountRoutes.post("/register", registerLimiter, validateRegisterInput, createAdminAccount);
-adminAccountRoutes.post("/login", loginLimiter, emailValidator(), passwordValidator(), authAccount, generateAdminToken);
+adminAccountRoutes.post("/login", loginLimiter, loginValidators, authAccount, generateAdminToken);
 
 adminAccountRoutes.use(validateToken);
 adminAccountRoutes.use(validateRole(["Admin", "Root"]));

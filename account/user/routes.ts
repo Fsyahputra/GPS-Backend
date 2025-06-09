@@ -16,7 +16,7 @@ import {
   validateToken,
   validateUpdateInput,
 } from "../middlewares";
-import { deviceNameValidators, emailValidator, handleValidators, passwordValidator } from "../validators";
+import { deviceNameValidators, loginValidators } from "../validators";
 import { validateAdmin } from "../admin/middlewares";
 import { sendUserAccount, updateUserAccount, registerDevice, deleteDevice, createAccount } from "./middlewares";
 
@@ -24,7 +24,7 @@ const userRoutes = Router();
 const deviceRoutes = Router();
 const deviceIdRoutes = Router({ mergeParams: true });
 userRoutes.post("/register", registerLimiter, validateRegisterInput, createAccount);
-userRoutes.post("/login", loginLimiter, emailValidator(), passwordValidator(), handleValidators, authAccount, generateToken);
+userRoutes.post("/login", loginLimiter, loginValidators, authAccount, generateToken);
 
 userRoutes.use(validateToken);
 userRoutes.use(validateRole(["User", "Admin", "Root"]));
