@@ -24,18 +24,18 @@ const AccountSchema = new Schema(
     email: { type: String, required: true, unique: true },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
-    profilePic: { type: Schema.Types.ObjectId, required: true, ref: "ProfilePic" },
+    profilePic: { type: Schema.Types.ObjectId, required: false, ref: "ProfilePic" },
     roles: { type: String, required: false, default: "User" },
     lastOnline: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
-export type AccountType = InferSchemaType<typeof AccountSchema>;
-export type AccountDoc = HydratedDocument<AccountType> & {
+export type AccountType = InferSchemaType<typeof AccountSchema> & {
   comparePassword(candidate: string): Promise<boolean>;
-} & {
   __t?: string;
 };
+
+export type AccountDoc = HydratedDocument<AccountType>;
 
 export type ProfilePicType = InferSchemaType<typeof ProfilePicSchema>;
 export type ProfilePicDoc = HydratedDocument<ProfilePicType>;

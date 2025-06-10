@@ -3,6 +3,7 @@ import {
   accountLogout,
   authAccount,
   deleteAccount,
+  deleteDevice,
   deleteProfilePic,
   generateToken,
   getDevices,
@@ -18,7 +19,7 @@ import {
 } from "../middlewares";
 import { deviceNameValidators, loginValidators } from "../validators";
 import { validateAdmin } from "../admin/middlewares";
-import { sendUserAccount, updateUserAccount, registerDevice, deleteDevice, createAccount } from "./middlewares";
+import { sendUserAccount, updateUserAccount, registerDevice, createAccount } from "./middlewares";
 
 const userRoutes = Router();
 const deviceRoutes = Router();

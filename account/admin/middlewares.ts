@@ -24,8 +24,7 @@ export const createAdminAccount = async (req: AdminRequest, res: Response, next:
   const session = await startSession();
   session.startTransaction();
   try {
-    const admin = req.account;
-
+    const admin = req.body as AdminDoc;
     if (!admin) throw new HttpError(ERROR_MESSAGES.INVALID_CREDENTIALS, 404);
     const newAdmin = new Admin({
       username: admin.username,
@@ -33,26 +32,30 @@ export const createAdminAccount = async (req: AdminRequest, res: Response, next:
       email: admin.email,
       firstName: admin.firstName,
       lastName: admin.lastName,
-      roles: admin.roles,
+      roles: "Admin",
       isAccepted: false,
+      profilePic: null,
     });
 
     const profilePic = new ProfilePic({
-      owner: admin?._id,
+      owner: newAdmin._id,
       pathFile: DEFAULT_PROFILE_PIC,
     });
+
+    newAdmin.profilePic = profilePic._id;
 
     const root = await Root.findOne({ username: process.env.ROOT_USERNAME }).session(session);
     if (!root) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
 
     root.AccReq.push(newAdmin._id);
     await root.save({ session });
-    await newAdmin.save({ session });
     await profilePic.save({ session });
+
+    await newAdmin.save({ session });
 
     await session.commitTransaction();
     session.endSession();
-    res.status(201).json("Admin account created successfully");
+    res.status(201).json({ message: "Admin account created successfully" });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

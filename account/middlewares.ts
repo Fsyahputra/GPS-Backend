@@ -12,6 +12,7 @@ import { ERROR_MESSAGES } from "@/constants";
 import { HttpError } from "@/utils/HttpError";
 import { startSession } from "mongoose";
 import Device, { type DeviceDoc } from "@/Device/deviceModels";
+import type { UserDoc } from "./user/models";
 
 export const upload = multer({ storage: memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 export const UPLOAD_DIR = path.resolve(__dirname, "uploads");
@@ -303,6 +304,33 @@ export const sendDevices = (req: AccountRequest, res: Response, next: NextFuncti
 
     res.status(200).json(payload);
   } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteDevice = async (req: AccountRequest, res: Response, next: NextFunction) => {
+  const session = await startSession();
+  session.startTransaction();
+  try {
+    const { deviceID } = req.params;
+    const user = req.account;
+    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    const device = req.devices && req.devices.find((d) => d.deviceID === deviceID);
+    if (!device) throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
+
+    await device.deleteOne({ session });
+    if (user.__t !== "User") throw new HttpError(ERROR_MESSAGES.INVALID_CREDENTIALS, 404);
+
+    const userDoc = user as UserDoc;
+    userDoc.devices = userDoc.devices.filter((d) => d.toString() !== device._id.toString());
+    await userDoc.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+    res.status(200).json({ message: "Device deleted successfully" });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };

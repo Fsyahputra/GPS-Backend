@@ -1,6 +1,6 @@
 import { Schema } from "mongoose";
 import Account from "../models";
-import type { AccountDoc } from "../models";
+import type { AccountDoc, AccountType } from "../models";
 import type { InferSchemaType, HydratedDocument } from "mongoose";
 
 const RootSchema = new Schema(
@@ -17,7 +17,7 @@ const RootSchema = new Schema(
   }
 );
 
-type RootType = InferSchemaType<typeof RootSchema> & AccountDoc;
+export type RootType = InferSchemaType<typeof RootSchema> & AccountType;
 export type RootDoc = HydratedDocument<RootType>;
 
 const Root = Account.discriminator<RootDoc>("Root", RootSchema);
