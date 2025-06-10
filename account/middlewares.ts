@@ -39,15 +39,31 @@ export const registerLimiter = rateLimit({
 
 export const authAccount = async (req: AccountRequest, res: Response, next: NextFunction) => {
   const { email, password, username } = req.body;
+  let account: AccountDoc | null = null;
   try {
-    const account = await Account.findOne({ $or: [{ email: email }, { username: username }] });
+    if (!username) {
+      account = await Account.findOne({ email: email });
+    }
+
+    if (!email) {
+      account = await Account.findOne({ username: username });
+    }
+
+    if (username && email) {
+      account = await Account.findOne({ $or: [{ email: email }, { username: username }] });
+    }
     if (!account) {
       throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
     }
     const isMatch = await account.comparePassword(password);
-    if (!isMatch) {
-      throw new HttpError(ERROR_MESSAGES.INVALID_CREDENTIALS, 401);
+
+    if (!isMatch) throw new HttpError(ERROR_MESSAGES.INVALID_CREDENTIALS, 401);
+
+    if (username && email) {
+      if (account.username !== username) throw new HttpError(ERROR_MESSAGES.INVALID_CREDENTIALS, 401);
+      if (account.email !== email) throw new HttpError(ERROR_MESSAGES.INVALID_CREDENTIALS, 401);
     }
+
     req.account = account;
     next();
   } catch (error) {

@@ -87,30 +87,6 @@ export const updateUserAccount = async (req: UserRequest, res: Response, next: N
   }
 };
 
-export const deleteDevice = async (req: UserRequest, res: Response, next: NextFunction) => {
-  const session = await startSession();
-  session.startTransaction();
-  try {
-    const { deviceID } = req.params;
-    const user = req.account;
-    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    const device = req.devices && req.devices.find((d) => d.deviceID === deviceID);
-    if (!device) throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
-
-    await device.deleteOne({ session });
-    user.devices = user.devices.filter((d) => d.toString() !== device._id.toString());
-    await user.save({ session });
-
-    await session.commitTransaction();
-    session.endSession();
-    res.status(200).json({ message: "Device deleted successfully" });
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    next(error);
-  }
-};
-
 export const registerDevice = async (req: UserRequest, res: Response, next: NextFunction) => {
   const session = await startSession();
   session.startTransaction();
