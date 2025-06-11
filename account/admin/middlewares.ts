@@ -12,6 +12,7 @@ import { DEFAULT_PROFILE_PIC, ProfilePic } from "../models";
 import User, { type UserDoc } from "../user/models";
 import Device, { type DeviceDoc } from "@/Device/deviceModels";
 import mongoose from "mongoose";
+import { verifyAccountToken } from "../service";
 dotenv.config();
 
 interface AdminRequest extends Omit<AccountRequest, "account"> {
@@ -177,6 +178,7 @@ export const generateAdminToken = (req: AdminRequest, res: Response, next: NextF
     if (!admin) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
 
     const token = accountTokenGenerator(admin);
+    const decodedToken = verifyAccountToken(token);
     res.status(200).json({ token });
   } catch (error) {
     next(error);

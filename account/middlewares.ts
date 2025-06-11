@@ -24,6 +24,7 @@ export interface AccountRequest extends Request {
   filepath?: string;
   decodedToken?: AccountTokenPayload;
   devices?: DeviceDoc[];
+  existingAccount?: AccountDoc;
 }
 
 export const loginLimiter = rateLimit({
@@ -69,9 +70,11 @@ export const authAccount = async (req: AccountRequest, res: Response, next: Next
     if (username && email) {
       account = await Account.findOne({ $or: [{ email: email }, { username: username }] });
     }
+
     if (!account) {
       throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
     }
+
     const isMatch = await account.comparePassword(password);
 
     if (!isMatch) throw new HttpError(ERROR_MESSAGES.INVALID_CREDENTIALS, 401);
@@ -235,20 +238,15 @@ export const validateRole = (requiredRoles: Array<"Admin" | "User" | "Root">) =>
 };
 
 export const validateRegisterInput = [registerValidators(), handleValidators, validateAccountExists];
+
 export const fieldAlreadyExist = (field: "username" | "email") => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: AccountRequest, res: Response, next: NextFunction) => {
     const value = field === "username" ? req.body.username : req.body.email;
     if (!value) throw new HttpError(ERROR_MESSAGES.FORBIDDEN, 403);
 
     try {
       const isExist = await checkFieldExistence(field, value);
-      if (isExist) {
-        if (field === "username") {
-          throw new HttpError(ERROR_MESSAGES.USERNAME_ALREADY_EXISTS, 400);
-        } else if (field === "email") {
-          throw new HttpError(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS, 400);
-        }
-      }
+      req.existingAccount = isExist === null ? undefined : isExist;
       next();
     } catch (error) {
       console.error(`Error checking if ${field} exists:`, error);
@@ -272,7 +270,7 @@ export const accountLogout = async (req: AccountRequest, res: Response, next: Ne
     const blacklistToken = new BlacklistToken({ token, userId: decodedToken.id });
     blacklistToken.expiresAt = new Date(Date.now() + 60 * 60 * 1000); // Token expires in 1 hour
     await blacklistToken.save();
-    res.status(200).json({ message: "User logged out successfully" });
+    res.status(200).json({ message: "Account logged out successfully" });
   } catch (error) {
     next(error);
   }
@@ -375,7 +373,6 @@ export const validateLoginInput = async (req: AccountRequest, res: Response, nex
   };
   try {
     const { username, email, password } = req.body;
-    console.log(password);
 
     if (!username && !email) throw new HttpError(ERROR_MESSAGES.INVALID_CREDENTIALS, 400);
     if (!username) requiredFields = { email: true };
@@ -394,6 +391,27 @@ export const validateLoginInput = async (req: AccountRequest, res: Response, nex
   }
 };
 
-export const validateUpdateInput = [updateAccountValidators(), handleValidators, fieldAlreadyExist("username"), fieldAlreadyExist("email")];
+export const validateExistedAccount = (req: AccountRequest, res: Response, next: NextFunction) => {
+  try {
+    const account = req.account;
+    if (!account) throw new HttpError(ERROR_MESSAGES.ACCOUNT_ALREADY_EXISTS, 400);
+    const existingAccount = req.existingAccount;
+
+    if (existingAccount && existingAccount._id.toString() !== account._id.toString()) {
+      if (existingAccount.username === account.username) {
+        throw new HttpError(ERROR_MESSAGES.USERNAME_ALREADY_EXISTS, 400);
+      } else if (existingAccount.email === account.email) {
+        throw new HttpError(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS, 400);
+      } else {
+        throw new HttpError(ERROR_MESSAGES.ACCOUNT_ALREADY_EXISTS, 400);
+      }
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const validateUpdateInput = [updateAccountValidators(), handleValidators, fieldAlreadyExist("username"), fieldAlreadyExist("email"), validateExistedAccount];
 
 export const validateDeviceName = [deviceNameValidator(true, "body"), handleValidators];

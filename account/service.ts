@@ -16,6 +16,7 @@ export interface AccountTokenPayload {
   email: string;
   username: string;
   role: string;
+  isAccepted?: boolean;
   exp?: number;
   iat?: number;
 }
@@ -82,7 +83,7 @@ export const isRoleValid = (role: string, validRoles: string[]): boolean => {
   return validRoles.includes(role);
 };
 
-export const checkFieldExistence = async (field: "username" | "email", value: string) => {
+export const checkFieldExistence = async (field: "username" | "email", value: string): Promise<AccountDoc | null> => {
   try {
     const isExist = await Account.findOne({ [field]: value });
     return isExist;

@@ -428,6 +428,22 @@ describe("User Account Tests", () => {
       expect(response.body.error).toContain("Failed to delete profile picture");
     });
 
+    it("Should update user account even if username and email is exist as long as it is the same user", async () => {
+      const updatedData = {
+        firstName: "Jane",
+        lastName: "Smith",
+        email: user.email, // Same email
+        username: user.username, // Same username
+      };
+      const response = await supertest(app).put(`${BASE_USER_API}/`).set("Authorization", `Bearer ${token}`).send(updatedData);
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty("message", "User account updated successfully");
+      const updatedUser = await User.findOne({ email: user.email });
+      expect(updatedUser).not.toBeNull();
+      expect(updatedUser?.firstName).toBe(updatedData.firstName);
+      expect(updatedUser?.lastName).toBe(updatedData.lastName);
+    });
+
     describe("Account and Device Management", () => {
       let token: string;
       let user: any;

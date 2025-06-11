@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import supertest from "supertest";
 import app from "../../main/app";
 import connectDB from "../../main/database";
-import Admin from "./models";
+import Admin, { type AdminDoc } from "./models";
 import { type AdminType } from "./models";
 import Device, { type DeviceType } from "@/Device/deviceModels";
 import mongoose from "mongoose";
@@ -41,7 +41,6 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  // Close the database connection after all tests
   await Admin.deleteMany({});
   await Device.deleteMany({});
   if (mongoose.connection.db) {
@@ -106,13 +105,17 @@ describe("Admin Account Tests", () => {
   });
 
   describe("Admin Registration and Login", () => {
-    beforeEach(async () => {
-      await Root.deleteMany({});
-      await Admin.deleteMany({});
-      await Device.deleteMany({});
-      await new Root(baseRootData).save();
-    });
     describe("Admin Registration", () => {
+      beforeEach(async () => {
+        await Root.deleteMany({});
+        await Admin.deleteMany({});
+        await Device.deleteMany({});
+        await new Root(baseRootData).save();
+      });
+      it("should connect to the database", async () => {
+        const isConnected = mongoose.connection.readyState === 1;
+        expect(isConnected).toBe(true);
+      });
       it("Root Account should exist", async () => {
         const root = await Root.findOne({ username: baseRootData.username });
         expect(root).not.toBeNull();
@@ -202,6 +205,12 @@ describe("Admin Account Tests", () => {
 
     describe("Admin Login", () => {
       beforeEach(async () => {
+        await Root.deleteMany({});
+        await Admin.deleteMany({});
+        await Device.deleteMany({});
+        await new Root(baseRootData).save();
+      });
+      beforeEach(async () => {
         const adminData = createAdminData();
         const response = await supertest(app).post(`${BASE_ADMIN_API}/register`).send(adminData);
         expect(response.status).toBe(201);
@@ -235,17 +244,196 @@ describe("Admin Account Tests", () => {
         expect(response.status).toBe(400);
         expect(response.body).toHaveProperty("error", "Invalid email format");
       });
+
       it("Should not login with invalid password format", async () => {
         const adminData = createAdminData({ password: "short" });
         const response = await supertest(app).post(`${BASE_ADMIN_API}/login`).send(adminData);
         expect(response.status).toBe(400);
         expect(response.body).toHaveProperty("error", "Password must be at least 8 characters long, Password must contain uppercase, lowercase, and number");
       });
+
       it("Should not login with invalid username format", async () => {
         const adminData = createAdminData({ username: "ab" });
         const response = await supertest(app).post(`${BASE_ADMIN_API}/login`).send(adminData);
         expect(response.status).toBe(400);
         expect(response.body).toHaveProperty("error", "Username must be between 3 and 20 characters long");
+      });
+
+      it("Should not login with missing required fields", async () => {
+        const response = await supertest(app).post(`${BASE_ADMIN_API}/login`).send({}).expect(400);
+        expect(response.body).toHaveProperty("error");
+      });
+
+      it("Should not login with empty credentials", async () => {
+        const response = await supertest(app).post(`${BASE_ADMIN_API}/login`).send({ username: "", password: "" }).expect(400);
+        expect(response.body).toHaveProperty("error");
+      });
+    });
+
+    describe("Admin Account Management", () => {
+      let adminToken: string;
+      let adminAccount: AdminDoc;
+
+      beforeEach(async () => {
+        await Admin.deleteMany({});
+        await Device.deleteMany({});
+        await BlacklistToken.deleteMany({});
+        await ProfilePic.deleteMany({});
+        await Root.deleteMany({});
+        await new Root(baseRootData).save();
+
+        const root = await Root.findOne({ username: baseRootData.username });
+        expect(root).not.toBeNull();
+        expect(root?.username).toBe(baseRootData.username);
+        expect(root?.email).toBe(baseRootData.email);
+        expect(root?.firstName).toBe(baseRootData.firstName);
+
+        const adminData = createAdminData();
+        const response = await supertest(app).post(`${BASE_ADMIN_API}/register`).send(adminData);
+        expect(response.status).toBe(201);
+        expect(response.body).toHaveProperty("message", "Admin account created successfully");
+
+        const admin = await Admin.findOne({ username: adminData.username });
+
+        expect(admin).not.toBeNull();
+        expect(admin?.username).toBe(adminData.username);
+        expect(admin?.email).toBe(adminData.email);
+        expect(admin?.firstName).toBe(adminData.firstName);
+        expect(admin?.lastName).toBe(adminData.lastName);
+        expect(admin?.roles).toBe("Admin");
+        expect(admin?.isAccepted).toBe(false);
+
+        const loginResponse = await supertest(app).post(`${BASE_ADMIN_API}/login`).send({ username: adminData.username, password: adminData.password, email: adminData.email });
+
+        expect(loginResponse.status).toBe(200);
+        expect(loginResponse.body).toHaveProperty("token");
+        expect(loginResponse.body.token).toBeDefined();
+        adminToken = loginResponse.body.token;
+        adminAccount = admin as AdminDoc;
+      });
+
+      it("should get admin account details", async () => {
+        const response = await supertest(app).get(`${BASE_ADMIN_API}`).set("Authorization", `Bearer ${adminToken}`);
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("username", baseAdminData.username);
+        expect(response.body).toHaveProperty("email", baseAdminData.email);
+        expect(response.body).toHaveProperty("firstName", baseAdminData.firstName);
+        expect(response.body).toHaveProperty("lastName", baseAdminData.lastName);
+        expect(response.body).toHaveProperty("roles", "Admin");
+      });
+
+      it("should update admin account details", async () => {
+        const updatedData = { firstName: "Jane", lastName: "Doe", email: "jane.doe@example.com", username: "janedoe" };
+        const response = await supertest(app).put(`${BASE_ADMIN_API}`).set("Authorization", `Bearer ${adminToken}`).send(updatedData);
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("message", "Admin account updated successfully");
+      });
+
+      it("Should update admin account details even with same username as long as its in the same account", async () => {
+        const updatedData = createAdminData();
+        const response = await supertest(app).put(`${BASE_ADMIN_API}`).set("Authorization", `Bearer ${adminToken}`).send(updatedData);
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("message", "Admin account updated successfully");
+      });
+
+      it("should not update admin account with invalid email", async () => {
+        const updatedData = { email: "invalid-email" };
+        const response = await supertest(app).put(`${BASE_ADMIN_API}`).set("Authorization", `Bearer ${adminToken}`).send(updatedData);
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error", "Invalid email format");
+      });
+
+      it("should not update admin account with invalid password", async () => {
+        const updatedData = { password: "short" };
+        const response = await supertest(app).put(`${BASE_ADMIN_API}`).set("Authorization", `Bearer ${adminToken}`).send(updatedData);
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error", "Password must be at least 8 characters long, Password must contain uppercase, lowercase, and number");
+      });
+
+      it("should not update admin account with invalid username", async () => {
+        const updatedData = { username: "ab" };
+        const response = await supertest(app).put(`${BASE_ADMIN_API}`).set("Authorization", `Bearer ${adminToken}`).send(updatedData);
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error", "Username must be between 3 and 20 characters long");
+      });
+
+      it("should not update admin account with missing required fields", async () => {
+        const response = await supertest(app).put(`${BASE_ADMIN_API}`).set("Authorization", `Bearer ${adminToken}`).send({}).expect(403);
+        expect(response.body).toHaveProperty("error");
+      });
+
+      it("Should delete admin account", async () => {
+        const response = await supertest(app).delete(`${BASE_ADMIN_API}`).set("Authorization", `Bearer ${adminToken}`);
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("message", "Admin account deleted successfully");
+        const deletedAdmin = await Admin.findOne({ username: baseAdminData.username });
+        expect(deletedAdmin).toBeNull();
+      });
+
+      it("Should Blacklist admin token", async () => {
+        const response = await supertest(app).get(`${BASE_ADMIN_API}/logout`).set("Authorization", `Bearer ${adminToken}`);
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("message", "Account logged out successfully");
+
+        const blacklistedToken = await BlacklistToken.findOne({ token: adminToken });
+        expect(blacklistedToken).not.toBeNull();
+        expect(blacklistedToken?.token).toBe(adminToken);
+      });
+
+      it("Should only allow access to authenticated admin", async () => {
+        const response = await supertest(app).get(`${BASE_ADMIN_API}`);
+        expect(response.status).toBe(401);
+        expect(response.body).toHaveProperty("error", "No token provided");
+      });
+
+      it("Blacklisted token should not allow access to admin account", async () => {
+        const response = await supertest(app).get(`${BASE_ADMIN_API}/logout`).set("Authorization", `Bearer ${adminToken}`);
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("message", "Account logged out successfully");
+
+        const relogin = await supertest(app).get(`${BASE_ADMIN_API}/`).set("Authorization", `Bearer ${adminToken}`);
+        expect(relogin.status).toBe(401);
+        expect(relogin.body).toHaveProperty("error", "Token has expired");
+      });
+
+      it("Should not allow access other admin account", async () => {
+        const otherAdminData = createAdminData({ username: "otheradmin", email: "fadhil@lolon.com", password: "otheradmin123A#" });
+        const otherAdminRegister = await supertest(app).post(`${BASE_ADMIN_API}/register`).send(otherAdminData);
+        expect(otherAdminRegister.status).toBe(201);
+        expect(otherAdminRegister.body).toHaveProperty("message", "Admin account created successfully");
+
+        const otherAdminLogin = await supertest(app).post(`${BASE_ADMIN_API}/login`).send({ username: otherAdminData.username, password: otherAdminData.password, email: otherAdminData.email });
+        expect(otherAdminLogin.status).toBe(200);
+        expect(otherAdminLogin.body).toHaveProperty("token");
+
+        const otherAdminToken = otherAdminLogin.body.token;
+        const response = await supertest(app).get(`${BASE_ADMIN_API}/`).set("Authorization", `Bearer ${otherAdminToken}`);
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("username", otherAdminData.username);
+        expect(response.body).toHaveProperty("email", otherAdminData.email);
+        expect(response.body).toHaveProperty("firstName", otherAdminData.firstName);
+        expect(response.body).toHaveProperty("lastName", otherAdminData.lastName);
+        expect(response.body).toHaveProperty("roles", "Admin");
+        expect(response.body).not.toHaveProperty("username", baseAdminData.username);
+        expect(response.body).not.toHaveProperty("email", baseAdminData.email);
+      });
+
+      it("Should not allow access to admin account with invalid token", async () => {
+        const response = await supertest(app).get(`${BASE_ADMIN_API}`).set("Authorization", `Bearer invalidToken`);
+        expect(response.status).toBe(401);
+        expect(response.body).toHaveProperty("error", "Invalid token");
+      });
+
+      it("Should have default profile picture", async () => {
+        const admin = await Admin.findOne({ username: baseAdminData.username }).populate("profilePic");
+        expect(admin).not.toBeNull();
+        expect((admin?.profilePic as any).pathFile).toBe(DEFAULT_PROFILE_PIC);
+      });
+
+      it("Should save the owner in profile picture", async () => {
+        const profilePic = await ProfilePic.findOne({ owner: adminAccount._id });
+        expect(profilePic).not.toBeNull();
+        expect(profilePic?.owner).toEqual(adminAccount._id);
       });
     });
   });

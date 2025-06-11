@@ -25,13 +25,13 @@ const adminAccountRoutes = Router();
 const userRoutes = Router();
 const devicesRoutes = Router();
 
-adminAccountRoutes.post("/register", registerLimiter, validateRegisterInput, createAdminAccount);
+adminAccountRoutes.post("/register", registerLimiter, ...validateRegisterInput, createAdminAccount);
 adminAccountRoutes.post("/login", loginLimiter, validateLoginInput, handleValidators, authAccount, generateAdminToken);
 
 adminAccountRoutes.use(validateToken);
 adminAccountRoutes.use(validateRole(["Admin", "Root"]));
 
-adminAccountRoutes.put("/", validateUpdateInput, updateAdminAccount);
+adminAccountRoutes.put("/", ...validateUpdateInput, updateAdminAccount);
 adminAccountRoutes.delete("/", deleteAdminAccount);
 adminAccountRoutes.get("/", sendAdminAccount);
 adminAccountRoutes.get("/logout", accountLogout);
@@ -43,7 +43,7 @@ devicesRoutes.put("/:deviceID", validateDeviceName, updateDevice);
 devicesRoutes.delete("/:deviceID", deleteDevice);
 
 userRoutes.get("/", sendUserAccount);
-userRoutes.put("/", validateUpdateInput, updateUserAccount);
+userRoutes.put("/", ...validateUpdateInput, updateUserAccount);
 userRoutes.delete("/", deleteAccount);
 
 userRoutes.use("/device/", getDevices, devicesRoutes);
