@@ -228,6 +228,25 @@ describe("Admin Account Tests", () => {
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty("error", "Invalid email or password");
       });
+
+      it("Should not login with invalid email format", async () => {
+        const adminData = createAdminData({ email: "invalid-email" });
+        const response = await supertest(app).post(`${BASE_ADMIN_API}/login`).send(adminData);
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error", "Invalid email format");
+      });
+      it("Should not login with invalid password format", async () => {
+        const adminData = createAdminData({ password: "short" });
+        const response = await supertest(app).post(`${BASE_ADMIN_API}/login`).send(adminData);
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error", "Password must be at least 8 characters long, Password must contain uppercase, lowercase, and number");
+      });
+      it("Should not login with invalid username format", async () => {
+        const adminData = createAdminData({ username: "ab" });
+        const response = await supertest(app).post(`${BASE_ADMIN_API}/login`).send(adminData);
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error", "Username must be between 3 and 20 characters long");
+      });
     });
   });
 });

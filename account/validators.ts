@@ -92,4 +92,4 @@ export const updateAccountValidators = [usernameValidator(false), emailValidator
 
 export const registerValidators = [usernameValidator(), emailValidator(), passwordValidator(), firstNameValidator(), lastNameValidator(), handleValidators];
 export const deviceNameValidators = [deviceNameValidatorTest(), handleValidators];
-export const loginValidators = [emailValidator(), passwordValidator(), handleValidators];
+export const loginValidators = [emailValidator(), passwordValidator(), usernameValidator(), handleValidators];
