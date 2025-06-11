@@ -7,12 +7,13 @@ import multer, { memoryStorage } from "multer";
 import { accountTokenGenerator, verifyAccountToken, saveFileToDisk, isRoleValid, checkFieldExistence, deleteFileFromDisk } from "./service";
 import { isImageValid } from "@/utils/fileUtils";
 import path from "path";
-import { updateAccountValidators, registerValidators } from "./validators";
+import { updateAccountValidators, registerValidators, loginValidators, deviceNameValidator, type RequiredFields } from "./validators";
 import { ERROR_MESSAGES } from "@/constants";
 import { HttpError } from "@/utils/HttpError";
 import { startSession } from "mongoose";
 import Device, { type DeviceDoc } from "@/Device/deviceModels";
 import type { UserDoc } from "./user/models";
+import { validationResult } from "express-validator";
 
 export const upload = multer({ storage: memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 export const UPLOAD_DIR = path.resolve(__dirname, "uploads");
@@ -36,6 +37,22 @@ export const registerLimiter = rateLimit({
   max: 1000000000,
   message: ERROR_MESSAGES.TOO_MANY_REQUESTS,
 });
+
+export const handleValidators = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const errorMessages = errors
+        .array()
+        .map((err) => err.msg)
+        .join(", ");
+      throw new HttpError(`${errorMessages}`, 400);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const authAccount = async (req: AccountRequest, res: Response, next: NextFunction) => {
   const { email, password, username } = req.body;
@@ -217,7 +234,7 @@ export const validateRole = (requiredRoles: Array<"Admin" | "User" | "Root">) =>
   };
 };
 
-export const validateRegisterInput = [...registerValidators, validateAccountExists];
+export const validateRegisterInput = [registerValidators(), handleValidators, validateAccountExists];
 export const fieldAlreadyExist = (field: "username" | "email") => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const value = field === "username" ? req.body.username : req.body.email;
@@ -351,4 +368,32 @@ export const deleteDevice = async (req: AccountRequest, res: Response, next: Nex
   }
 };
 
-export const validateUpdateInput = [...updateAccountValidators, fieldAlreadyExist("username"), fieldAlreadyExist("email")];
+export const validateLoginInput = async (req: AccountRequest, res: Response, next: NextFunction) => {
+  let requiredFields: RequiredFields = {
+    username: true,
+    email: true,
+  };
+  try {
+    const { username, email, password } = req.body;
+    console.log(password);
+
+    if (!username && !email) throw new HttpError(ERROR_MESSAGES.INVALID_CREDENTIALS, 400);
+    if (!username) requiredFields = { email: true };
+    if (!email) requiredFields = { username: true };
+    if (username && email) requiredFields = { username: true, email: true };
+    if (username === "" || email === "") requiredFields = { username: true, email: true };
+
+    const validator = loginValidators(requiredFields);
+
+    for (const validation of validator) {
+      await validation.run(req);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const validateUpdateInput = [updateAccountValidators(), handleValidators, fieldAlreadyExist("username"), fieldAlreadyExist("email")];
+
+export const validateDeviceName = [deviceNameValidator(true, "body"), handleValidators];

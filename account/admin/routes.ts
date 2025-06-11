@@ -1,7 +1,24 @@
 import { Router } from "express";
-import { accountLogout, authAccount, deleteAccount, deleteProfilePic, loginLimiter, registerLimiter, validateUpdateInput, updateDevice, updateProfilePic, validateRole, validateToken, sendDevices, deleteDevice } from "../middlewares";
+import {
+  accountLogout,
+  authAccount,
+  deleteAccount,
+  deleteProfilePic,
+  loginLimiter,
+  registerLimiter,
+  validateUpdateInput,
+  updateDevice,
+  updateProfilePic,
+  validateRole,
+  validateToken,
+  sendDevices,
+  deleteDevice,
+  handleValidators,
+  validateLoginInput,
+  validateDeviceName,
+} from "../middlewares";
 import { validateRegisterInput } from "../middlewares";
-import { deviceNameValidators, loginValidators, usernameValidator } from "../validators";
+import { usernameValidator } from "../validators";
 import { createAdminAccount, deleteAdminAccount, generateAdminToken, sendAdminAccount, updateAdminAccount, validateAdmin, sendUserAccount, updateUserAccount, getUser, getDevices } from "./middlewares";
 
 const adminAccountRoutes = Router();
@@ -9,7 +26,7 @@ const userRoutes = Router();
 const devicesRoutes = Router();
 
 adminAccountRoutes.post("/register", registerLimiter, validateRegisterInput, createAdminAccount);
-adminAccountRoutes.post("/login", loginLimiter, loginValidators, authAccount, generateAdminToken);
+adminAccountRoutes.post("/login", loginLimiter, validateLoginInput, handleValidators, authAccount, generateAdminToken);
 
 adminAccountRoutes.use(validateToken);
 adminAccountRoutes.use(validateRole(["Admin", "Root"]));
@@ -22,7 +39,7 @@ adminAccountRoutes.put("/profile-pic", updateProfilePic);
 adminAccountRoutes.delete("/profile-pic", deleteProfilePic);
 
 devicesRoutes.get("/", sendDevices);
-devicesRoutes.put("/:deviceID", deviceNameValidators, updateDevice);
+devicesRoutes.put("/:deviceID", validateDeviceName, updateDevice);
 devicesRoutes.delete("/:deviceID", deleteDevice);
 
 userRoutes.get("/", sendUserAccount);
