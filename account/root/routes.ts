@@ -12,11 +12,10 @@ import {
   validateRole,
   validateToken,
   validateUpdateInput,
+  validateUsername,
 } from "../middlewares/common";
 import { createRootAccount, sendRootAccount, updateRootAccount } from "../middlewares/root";
-import { usernameValidator } from "../validators";
-import { sendAdminAccount, sendUserAccount } from "../middlewares/admin";
-import { getAdmin, getUser } from "../middlewares/adminRootShared";
+import { deleteAdminAccount, getAdmin, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "../middlewares/adminRootShared";
 const rootRoutes = Router();
 const adminRoutes = Router();
 const userRoutes = Router();
@@ -35,11 +34,14 @@ rootRoutes.put("/profile-pic", updateProfilePic);
 rootRoutes.delete("/profile-pic", updateProfilePic);
 
 adminRoutes.get("/", sendAdminAccount);
+adminRoutes.put("/", ...validateUpdateInput, updateAdminAccount);
+adminRoutes.delete("/", deleteAdminAccount);
 
-rootRoutes.use("/admin/:username", usernameValidator(true, "param"), getAdmin, adminRoutes);
+rootRoutes.use("/admin/:username", validateUsername, getAdmin, adminRoutes);
 
 userRoutes.get("/", sendUserAccount);
+userRoutes.put("/", ...validateUpdateInput, updateUserAccount);
 
-rootRoutes.use("/user/:username", usernameValidator(true, "param"), getUser, userRoutes);
+rootRoutes.use("/user/:username", validateUsername, getUser, userRoutes);
 
 export default rootRoutes;

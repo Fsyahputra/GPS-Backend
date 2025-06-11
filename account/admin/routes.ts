@@ -16,11 +16,11 @@ import {
   handleValidators,
   validateLoginInput,
   validateDeviceName,
+  validateUsername,
 } from "../middlewares/common";
 import { validateRegisterInput } from "../middlewares/common";
-import { usernameValidator } from "../validators";
-import { createAdminAccount, deleteAdminAccount, generateAdminToken, sendAdminAccount, updateAdminAccount, validateAdmin, sendUserAccount, updateUserAccount, getDevices } from "../middlewares/admin";
-import { getUser } from "../middlewares/adminRootShared";
+import { createAdminAccount, generateAdminToken, validateAdmin, getDevices } from "../middlewares/admin";
+import { deleteAdminAccount, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "../middlewares/adminRootShared";
 
 const adminAccountRoutes = Router();
 const userRoutes = Router();
@@ -48,6 +48,6 @@ userRoutes.put("/", ...validateUpdateInput, updateUserAccount);
 userRoutes.delete("/", deleteAccount);
 
 userRoutes.use("/device/", getDevices, devicesRoutes);
-adminAccountRoutes.use("/user/:username", validateAdmin, usernameValidator(true, "param"), getUser, userRoutes);
+adminAccountRoutes.use("/user/:username", validateAdmin, validateUsername, getUser, userRoutes);
 
 export default adminAccountRoutes;

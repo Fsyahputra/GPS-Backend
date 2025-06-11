@@ -6,7 +6,7 @@ import type { AccountTokenPayload } from "../service";
 import multer, { memoryStorage } from "multer";
 import { accountTokenGenerator, verifyAccountToken, saveFileToDisk, isRoleValid, checkFieldExistence, deleteFileFromDisk } from "../service";
 import { isImageValid } from "@/utils/fileUtils";
-import { updateAccountValidators, registerValidators, loginValidators, deviceNameValidator, type RequiredFields } from "../validators";
+import { updateAccountValidators, registerValidators, loginValidators, deviceNameValidator, type RequiredFields, usernameValidator } from "../validators";
 import { ERROR_MESSAGES } from "@/constants";
 import { HttpError } from "@/utils/HttpError";
 import { startSession } from "mongoose";
@@ -414,3 +414,5 @@ export const validateExistedAccount = (req: AccountRequest, res: Response, next:
 export const validateUpdateInput = [updateAccountValidators(), handleValidators, fieldAlreadyExist("username"), fieldAlreadyExist("email"), validateExistedAccount];
 
 export const validateDeviceName = [deviceNameValidator(true, "body"), handleValidators];
+
+export const validateUsername = [usernameValidator(true, "param"), handleValidators];
