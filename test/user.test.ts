@@ -1,12 +1,12 @@
 import { describe, it, beforeAll, beforeEach, afterAll, expect } from "bun:test";
 import dotenv from "dotenv";
 import supertest from "supertest";
-import app from "../../main/app";
-import connectDB from "../../main/database";
-import User from "./models";
+import app from "../main/app";
+import connectDB from "../main/database";
+import User from "../account/user/models";
 import Device, { type DeviceDoc, type DeviceType } from "@/Device/deviceModels";
 import mongoose from "mongoose";
-import { BlacklistToken, DEFAULT_PROFILE_PIC, ProfilePic } from "../models";
+import { BlacklistToken, DEFAULT_PROFILE_PIC, ProfilePic } from "../account/models";
 import fs from "fs";
 
 dotenv.config({ path: ".test.env" });
@@ -359,7 +359,7 @@ describe("User Account Tests", () => {
     it("Should Blacklist Token When user Logout", async () => {
       const response = await supertest(app).get(`${BASE_USER_API}/logout`).set("Authorization", `Bearer ${token}`);
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty("message", "User logged out successfully");
+      expect(response.body).toHaveProperty("message", "Account logged out successfully");
 
       const blacklistedToken = await BlacklistToken.findOne({ token });
       expect(blacklistedToken).not.toBeNull();

@@ -1,22 +1,21 @@
 import rateLimit from "express-rate-limit";
-import { BlacklistToken, DEFAULT_PROFILE_PIC, ProfilePic, type AccountDoc } from "./models";
+import { BlacklistToken, DEFAULT_PROFILE_PIC, ProfilePic, type AccountDoc } from "../models";
 import type { Request, Response, NextFunction } from "express";
-import Account from "./models";
-import type { AccountTokenPayload } from "./service";
+import Account from "../models";
+import type { AccountTokenPayload } from "../service";
 import multer, { memoryStorage } from "multer";
-import { accountTokenGenerator, verifyAccountToken, saveFileToDisk, isRoleValid, checkFieldExistence, deleteFileFromDisk } from "./service";
+import { accountTokenGenerator, verifyAccountToken, saveFileToDisk, isRoleValid, checkFieldExistence, deleteFileFromDisk } from "../service";
 import { isImageValid } from "@/utils/fileUtils";
-import path from "path";
-import { updateAccountValidators, registerValidators, loginValidators, deviceNameValidator, type RequiredFields } from "./validators";
+import { updateAccountValidators, registerValidators, loginValidators, deviceNameValidator, type RequiredFields } from "../validators";
 import { ERROR_MESSAGES } from "@/constants";
 import { HttpError } from "@/utils/HttpError";
 import { startSession } from "mongoose";
 import Device, { type DeviceDoc } from "@/Device/deviceModels";
-import type { UserDoc } from "./user/models";
+import type { UserDoc } from "../user/models";
 import { validationResult } from "express-validator";
 
 export const upload = multer({ storage: memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
-export const UPLOAD_DIR = path.resolve(__dirname, "uploads");
+export const UPLOAD_DIR = "/home/muhammad-fadhil-syahputra/GPS/backend/uploads";
 
 export interface AccountRequest extends Request {
   account?: AccountDoc;

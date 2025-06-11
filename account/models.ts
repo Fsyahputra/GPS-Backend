@@ -2,7 +2,7 @@ import { Schema, model } from "mongoose";
 import bycrpt from "bcrypt";
 import type { HydratedDocument, InferSchemaType } from "mongoose";
 
-export const DEFAULT_PROFILE_PIC: string = "/home/muhammad-fadhil-syahputra/GPS/backend/account/uploads/default-profilepic.jpg";
+export const DEFAULT_PROFILE_PIC: string = "/home/muhammad-fadhil-syahputra/GPS/backend/uploads/default-profilepic.jpg";
 
 const ProfilePicSchema = new Schema(
   {

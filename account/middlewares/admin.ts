@@ -1,12 +1,12 @@
 import type { NextFunction, Request, Response } from "express";
-import Admin from "./models";
+import Admin from "../admin/models";
 import Root from "../root/rootModels";
 import { mongo, startSession } from "mongoose";
-import type { AdminDoc } from "./models";
-import type { AccountRequest } from "../middlewares";
+import type { AdminDoc } from "../admin/models";
+import type { AccountRequest } from "./common";
 import { HttpError } from "@/utils/HttpError";
 import { ERROR_MESSAGES } from "@/constants";
-import { accountTokenGenerator } from "./service";
+import { accountTokenGenerator } from "../admin/service";
 import dotenv from "dotenv";
 import { DEFAULT_PROFILE_PIC, ProfilePic } from "../models";
 import User, { type UserDoc } from "../user/models";
@@ -15,7 +15,7 @@ import mongoose from "mongoose";
 import { verifyAccountToken } from "../service";
 dotenv.config();
 
-interface AdminRequest extends Omit<AccountRequest, "account"> {
+export interface AdminRequest extends Omit<AccountRequest, "account"> {
   account?: AdminDoc;
   user?: UserDoc;
   devices?: DeviceDoc[];
@@ -87,6 +87,7 @@ export const sendAdminAccount = async (req: AdminRequest, res: Response, next: N
       firstName: admin.firstName,
       lastName: admin.lastName,
       roles: admin.roles,
+      isAccepted: admin.isAccepted,
     });
   } catch (error) {
     next(error);
@@ -178,20 +179,7 @@ export const generateAdminToken = (req: AdminRequest, res: Response, next: NextF
     if (!admin) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
 
     const token = accountTokenGenerator(admin);
-    const decodedToken = verifyAccountToken(token);
     res.status(200).json({ token });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getUser = async (req: AdminRequest, res: Response, next: NextFunction) => {
-  try {
-    const username = req.params.username;
-    const user = await User.findOne({ username }).populate("devices");
-    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    req.user = user;
-    next();
   } catch (error) {
     next(error);
   }

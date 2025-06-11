@@ -1,12 +1,11 @@
-import User from "./models";
-import type { AccountRequest } from "../middlewares";
+import User from "../user/models";
+import type { AccountRequest } from "./common";
 import type { Response, NextFunction } from "express";
 import { HttpError } from "@/utils/HttpError";
 import { startSession } from "mongoose";
 import { ERROR_MESSAGES } from "@/constants";
-import type { UserDoc } from "./models";
+import type { UserDoc } from "../user/models";
 import Device from "@/Device/deviceModels";
-import validator from "express-validator";
 import { ProfilePic } from "../models";
 
 export type UserRequest = Omit<AccountRequest, "account"> & {

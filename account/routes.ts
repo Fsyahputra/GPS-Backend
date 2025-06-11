@@ -2,7 +2,7 @@ import { Router } from "express";
 import userRoutes from "./user/routes";
 import adminRoutes from "./admin/routes";
 import rootRoutes from "./root/routes";
-import { loginLimiter, authAccount, generateToken, registerLimiter } from "./middlewares";
+import { loginLimiter, authAccount, generateToken, registerLimiter } from "./middlewares/common";
 const accountRoutes = Router();
 
 accountRoutes.use("/user", userRoutes);

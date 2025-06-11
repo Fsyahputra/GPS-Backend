@@ -1,16 +1,16 @@
 import { describe, it, beforeAll, beforeEach, afterAll, expect } from "bun:test";
 import dotenv from "dotenv";
 import supertest from "supertest";
-import app from "../../main/app";
-import connectDB from "../../main/database";
-import Admin, { type AdminDoc } from "./models";
-import { type AdminType } from "./models";
+import app from "../main/app";
+import connectDB from "../main/database";
+import Admin, { type AdminDoc } from "../account/admin/models";
+import { type AdminType } from "../account/admin/models";
 import Device, { type DeviceType } from "@/Device/deviceModels";
 import mongoose from "mongoose";
-import { BlacklistToken, DEFAULT_PROFILE_PIC, ProfilePic } from "../models";
+import { BlacklistToken, DEFAULT_PROFILE_PIC, ProfilePic } from "../account/models";
 import fs from "fs";
-import type { RootType } from "../root/rootModels";
-import Root from "../root/rootModels";
+import type { RootType } from "../account/root/rootModels";
+import Root from "../account/root/rootModels";
 
 dotenv.config({ path: ".test.env" });
 
@@ -435,6 +435,55 @@ describe("Admin Account Tests", () => {
         expect(profilePic).not.toBeNull();
         expect(profilePic?.owner).toEqual(adminAccount._id);
       });
+
+      it("Should update profile picture", async () => {
+        const imagePath = TEST_IMG_PATH;
+        const response = await supertest(app).put(`${BASE_ADMIN_API}/profile-pic`).set("Authorization", `Bearer ${adminToken}`).attach("profilePic", imagePath);
+        expect(response.status).toBe(201);
+        expect(response.body).toHaveProperty("message", "Profile picture uploaded successfully");
+        const updatedAdmin = await Admin.findOne({ username: baseAdminData.username }).populate("profilePic");
+        expect(updatedAdmin).not.toBeNull();
+        expect((updatedAdmin?.profilePic as any).pathFile).not.toBe(DEFAULT_PROFILE_PIC);
+        expect(fs.existsSync((updatedAdmin?.profilePic as any).pathFile)).toBe(true);
+        fs.unlinkSync((updatedAdmin?.profilePic as any).pathFile);
+      });
+
+      it("Should not update profile picture with invalid file type", async () => {
+        const response = await supertest(app).put(`${BASE_ADMIN_API}/profile-pic`).set("Authorization", `Bearer ${adminToken}`).attach("profilePic", "test.txt");
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error", "Invalid file type. Only JPEG, PNG, and GIF are allowed.");
+      });
+
+      it("Should delete profile picture", async () => {
+        const imagePath = TEST_IMG_PATH;
+        const uploadResponse = await supertest(app).put(`${BASE_ADMIN_API}/profile-pic`).set("Authorization", `Bearer ${adminToken}`).attach("profilePic", imagePath);
+        expect(uploadResponse.status).toBe(201);
+        expect(uploadResponse.body).toHaveProperty("message", "Profile picture uploaded successfully");
+        const deleteResponse = await supertest(app).delete(`${BASE_ADMIN_API}/profile-pic`).set("Authorization", `Bearer ${adminToken}`);
+        expect(deleteResponse.status).toBe(200);
+        expect(deleteResponse.body).toHaveProperty("message", "Profile picture deleted successfully");
+        const updatedAdmin = await Admin.findOne({ username: baseAdminData.username }).populate("profilePic");
+        expect(updatedAdmin).not.toBeNull();
+        expect((updatedAdmin?.profilePic as any).pathFile).toBe(DEFAULT_PROFILE_PIC);
+        expect(fs.existsSync((updatedAdmin?.profilePic as any).pathFile)).toBe(true);
+      });
+
+      it("Should not allow profile picture deletion if no profile picture exists", async () => {
+        const response = await supertest(app).delete(`${BASE_ADMIN_API}/profile-pic`).set("Authorization", `Bearer ${adminToken}`);
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error", "Failed to delete profile picture");
+      });
+
+      it("Should not allow profile picture update if no file is provided", async () => {
+        const response = await supertest(app).put(`${BASE_ADMIN_API}/profile-pic`).set("Authorization", `Bearer ${adminToken}`);
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error", "Profile picture is required");
+      });
+    });
+
+    describe("Admin Root Interaction", () => {
+      let adminToken: string;
+      let adminAccount: AdminDoc;
     });
   });
 });
