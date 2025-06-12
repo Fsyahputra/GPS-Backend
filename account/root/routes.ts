@@ -2,11 +2,16 @@ import { Router } from "express";
 import {
   accountLogout,
   authAccount,
+  deleteAccount,
+  deleteDevice,
   generateToken,
   handleValidators,
   loginLimiter,
   registerLimiter,
+  sendDevices,
+  updateDevice,
   updateProfilePic,
+  validateDeviceName,
   validateLoginInput,
   validateRegisterInput,
   validateRole,
@@ -14,11 +19,12 @@ import {
   validateUpdateInput,
   validateUsername,
 } from "../middlewares/common";
-import { createRootAccount, sendRootAccount, updateRootAccount } from "../middlewares/root";
-import { deleteAdminAccount, getAdmin, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "../middlewares/adminRootShared";
+import { acceptAdminRequest, createRootAccount, getAdmin, rejectAdminRequest, sendRootAccount, updateRootAccount } from "../middlewares/root";
+import { deleteAdminAccount, determineType, getDevices, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "../middlewares/adminRootShared";
 const rootRoutes = Router();
 const adminRoutes = Router();
 const userRoutes = Router();
+const deviceRoutes = Router();
 
 rootRoutes.use(validateRole(["Root"]));
 rootRoutes.post("/register", registerLimiter, ...validateRegisterInput, createRootAccount);
@@ -36,12 +42,21 @@ rootRoutes.delete("/profile-pic", updateProfilePic);
 adminRoutes.get("/", sendAdminAccount);
 adminRoutes.put("/", ...validateUpdateInput, updateAdminAccount);
 adminRoutes.delete("/", deleteAdminAccount);
+adminRoutes.post("/acc", acceptAdminRequest);
+adminRoutes.post("/reject", rejectAdminRequest);
 
-rootRoutes.use("/admin/:username", validateUsername, getAdmin, adminRoutes);
+rootRoutes.use("/admin/:username", validateUsername, getAdmin, determineType, adminRoutes);
 
 userRoutes.get("/", sendUserAccount);
 userRoutes.put("/", ...validateUpdateInput, updateUserAccount);
+userRoutes.delete("/", deleteAccount);
 
-rootRoutes.use("/user/:username", validateUsername, getUser, userRoutes);
+deviceRoutes.get("/", sendDevices);
+deviceRoutes.put("/:deviceID", validateDeviceName, updateDevice);
+deviceRoutes.delete("/:deviceID", deleteDevice);
+
+userRoutes.use("/device/", getDevices, deviceRoutes);
+
+rootRoutes.use("/user/:username", validateUsername, getUser, determineType, userRoutes);
 
 export default rootRoutes;

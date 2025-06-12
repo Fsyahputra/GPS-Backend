@@ -4,12 +4,10 @@ import supertest from "supertest";
 import app from "../main/app";
 import connectDB from "../main/database";
 import Admin, { type AdminDoc } from "../account/admin/models";
-import { type AdminType } from "../account/admin/models";
 import Device, { type DeviceType } from "@/Device/deviceModels";
 import mongoose from "mongoose";
 import { BlacklistToken, DEFAULT_PROFILE_PIC, ProfilePic } from "../account/models";
 import fs from "fs";
-import type { RootType } from "../account/root/rootModels";
 import Root from "../account/root/rootModels";
 
 dotenv.config({ path: ".test.env" });
@@ -367,7 +365,11 @@ describe("Admin Account Tests", () => {
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty("message", "Admin account deleted successfully");
         const deletedAdmin = await Admin.findOne({ username: baseAdminData.username });
-        expect(deletedAdmin).toBeNull();
+        expect(deletedAdmin).toHaveProperty("isDeleted", true);
+        expect(deletedAdmin).toHaveProperty("deletedAt");
+        expect(deletedAdmin).toHaveProperty("deletedBy", adminAccount._id);
+        expect(deletedAdmin).toHaveProperty("updatedAt");
+        expect(deletedAdmin).toHaveProperty("updatedBy", adminAccount._id);
       });
 
       it("Should Blacklist admin token", async () => {

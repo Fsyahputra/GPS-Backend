@@ -8,8 +8,6 @@ const AdminSchema = new Schema(
     issuedAt: { type: Date, required: false, default: null },
     issuedBy: { type: Schema.Types.ObjectId, ref: "Account", default: null },
     isAccepted: { type: Boolean, required: true, default: false },
-    deletedAt: { type: Date, required: false, default: null },
-    deletedBy: { type: Schema.Types.ObjectId, required: false, ref: "Account", default: null },
   },
   {
     timestamps: true,

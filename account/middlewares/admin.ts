@@ -1,7 +1,7 @@
-import type { NextFunction, Request, Response } from "express";
+import type { NextFunction, Response } from "express";
 import Admin from "../admin/models";
 import Root from "../root/rootModels";
-import { mongo, startSession } from "mongoose";
+import { startSession } from "mongoose";
 import type { AdminDoc } from "../admin/models";
 import type { AccountRequest } from "./common";
 import { HttpError } from "@/utils/HttpError";
@@ -9,16 +9,15 @@ import { ERROR_MESSAGES } from "@/constants";
 import { accountTokenGenerator } from "../admin/service";
 import dotenv from "dotenv";
 import { DEFAULT_PROFILE_PIC, ProfilePic } from "../models";
-import User, { type UserDoc } from "../user/models";
-import Device, { type DeviceDoc } from "@/Device/deviceModels";
-import mongoose from "mongoose";
-import { verifyAccountToken } from "../service";
+import { type UserDoc } from "../user/models";
+import { type DeviceDoc } from "@/Device/deviceModels";
 dotenv.config();
 
 export interface AdminRequest extends Omit<AccountRequest, "account"> {
   account?: AdminDoc;
   user?: UserDoc;
   devices?: DeviceDoc[];
+  AccountType?: "Root" | "Admin";
 }
 
 export const createAdminAccount = async (req: AdminRequest, res: Response, next: NextFunction) => {
@@ -84,18 +83,6 @@ export const generateAdminToken = (req: AdminRequest, res: Response, next: NextF
 
     const token = accountTokenGenerator(admin);
     res.status(200).json({ token });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getDevices = async (req: AdminRequest, res: Response, next: NextFunction) => {
-  try {
-    const user = req.user;
-    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    const devices = await Device.find({ owner: user._id });
-    req.devices = devices;
-    next();
   } catch (error) {
     next(error);
   }

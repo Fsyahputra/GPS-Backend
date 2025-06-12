@@ -19,8 +19,8 @@ import {
   validateUsername,
 } from "../middlewares/common";
 import { validateRegisterInput } from "../middlewares/common";
-import { createAdminAccount, generateAdminToken, validateAdmin, getDevices } from "../middlewares/admin";
-import { deleteAdminAccount, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "../middlewares/adminRootShared";
+import { createAdminAccount, generateAdminToken, validateAdmin } from "../middlewares/admin";
+import { deleteAdminAccount, determineType, getDevices, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "../middlewares/adminRootShared";
 
 const adminAccountRoutes = Router();
 const userRoutes = Router();
@@ -31,6 +31,7 @@ adminAccountRoutes.post("/login", loginLimiter, validateLoginInput, handleValida
 
 adminAccountRoutes.use(validateToken);
 adminAccountRoutes.use(validateRole(["Admin", "Root"]));
+adminAccountRoutes.use(determineType);
 
 adminAccountRoutes.put("/", ...validateUpdateInput, updateAdminAccount);
 adminAccountRoutes.delete("/", deleteAdminAccount);
