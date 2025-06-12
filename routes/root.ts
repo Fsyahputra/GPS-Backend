@@ -4,6 +4,7 @@ import {
   authAccount,
   deleteAccount,
   deleteDevice,
+  determineType,
   generateToken,
   handleValidators,
   loginLimiter,
@@ -18,9 +19,9 @@ import {
   validateToken,
   validateUpdateInput,
   validateUsername,
-} from "../middlewares/common";
-import { acceptAdminRequest, createRootAccount, getAdmin, rejectAdminRequest, sendRootAccount, updateRootAccount } from "../middlewares/root";
-import { deleteAdminAccount, determineType, getDevices, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "../middlewares/adminRootShared";
+} from "@/middlewares/common";
+import { acceptAdminRequest, createRootAccount, getAdmin, rejectAdminRequest, sendRootAccount, updateRootAccount } from "@/middlewares/root";
+import { deleteAdminAccount, getDevices, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "@/middlewares/adminRootShared";
 const rootRoutes = Router();
 const adminRoutes = Router();
 const userRoutes = Router();
@@ -32,7 +33,6 @@ rootRoutes.post("/login", loginLimiter, validateLoginInput, handleValidators, au
 
 rootRoutes.use(validateToken);
 rootRoutes.use(validateRole(["Root"]));
-
 rootRoutes.get("/", sendRootAccount);
 rootRoutes.put("/", ...validateUpdateInput, updateRootAccount);
 rootRoutes.get("/logout", accountLogout);

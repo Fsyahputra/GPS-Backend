@@ -3,11 +3,14 @@ import dotenv from "dotenv";
 import supertest from "supertest";
 import app from "../main/app";
 import connectDB from "../main/database";
-import User from "../account/user/models";
-import Device, { type DeviceDoc, type DeviceType } from "@/Device/deviceModels";
+import User from "@/model/User";
+import Device from "@/model/device";
 import mongoose from "mongoose";
-import { BlacklistToken, DEFAULT_PROFILE_PIC, ProfilePic } from "../account/models";
 import fs from "fs";
+import { DEFAULT_PROFILE_PIC, TEST_IMAGE_PATH as img } from "@/constants";
+import type { DeviceType } from "@/types/types";
+import ProfilePic from "@/model/profilePic";
+import BlacklistToken from "@/model/blackListToken";
 
 dotenv.config({ path: ".test.env" });
 
@@ -16,7 +19,7 @@ const DB_PORT = process.env.DB_PORT || "27017";
 const DB_URI = `mongodb://${DB_ADDRESS}:${DB_PORT}/?replicaSet=GPS-Tracker-Test`;
 const originalConsoleError = console.error;
 const BASE_USER_API = "/api/account/user";
-const TEST_IMG_PATH = "/home/muhammad-fadhil-syahputra/GPS/backend/test.jpeg";
+const TEST_IMG_PATH = img;
 
 beforeAll(() => {
   console.error = (...args) => {

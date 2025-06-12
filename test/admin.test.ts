@@ -3,12 +3,15 @@ import dotenv from "dotenv";
 import supertest from "supertest";
 import app from "../main/app";
 import connectDB from "../main/database";
-import Admin, { type AdminDoc } from "../account/admin/models";
-import Device, { type DeviceType } from "@/Device/deviceModels";
+import Admin from "@/model/admin";
+import Device from "@/model/device";
 import mongoose from "mongoose";
-import { BlacklistToken, DEFAULT_PROFILE_PIC, ProfilePic } from "../account/models";
 import fs from "fs";
-import Root from "../account/root/rootModels";
+import { DEFAULT_PROFILE_PIC, TEST_IMAGE_PATH as img } from "@/constants";
+import Root from "@/model/root";
+import type { AdminDoc, DeviceType } from "@/types/types";
+import BlacklistToken from "@/model/blackListToken";
+import ProfilePic from "@/model/profilePic";
 
 dotenv.config({ path: ".test.env" });
 
@@ -18,7 +21,7 @@ const DB_URI = `mongodb://${DB_ADDRESS}:${DB_PORT}/?replicaSet=GPS-Tracker-Test`
 console.log("Connecting to MongoDB at:", DB_URI);
 const originalConsoleError = console.error;
 const BASE_ADMIN_API = "/api/account/admin";
-const TEST_IMG_PATH = "/home/muhammad-fadhil-syahputra/GPS/backend/test.jpeg";
+const TEST_IMG_PATH = img;
 
 beforeAll(() => {
   console.error = (...args) => {

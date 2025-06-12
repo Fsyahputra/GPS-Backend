@@ -1,6 +1,6 @@
-import { Schema, model } from "mongoose";
+import { Schema } from "mongoose";
 
-export const CoordSchema = new Schema({
+const CoordSchema = new Schema({
   coord: { type: Number, required: true },
   dir: { type: String, required: true, enum: ["E", "S", "W", "N"] },
 });
@@ -16,5 +16,4 @@ const LocationSchema = new Schema(
   { timestamps: true }
 );
 
-const Location = model("Location", LocationSchema);
-export default Location;
+export default LocationSchema;

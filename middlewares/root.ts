@@ -1,22 +1,11 @@
-import Root, { type RootDoc } from "../root/rootModels";
+import Root from "@/model/root";
 import type { NextFunction, Response } from "express";
 import { HttpError } from "@/utils/HttpError";
-import { ERROR_MESSAGES } from "@/constants";
+import { DEFAULT_PROFILE_PIC, ERROR_MESSAGES } from "@/constants";
 import { startSession } from "mongoose";
-import { DEFAULT_PROFILE_PIC, ProfilePic } from "../models";
-import type { AdminRequest } from "./admin";
-import type { AdminDoc } from "../admin/models";
-import Admin from "../admin/models";
-import type { UserDoc } from "../user/models";
-import type { DeviceDoc } from "@/Device/deviceModels";
-
-export interface RootRequest extends Omit<AdminRequest, "account"> {
-  account?: RootDoc;
-  admin?: AdminDoc;
-  AccountType?: "Root" | "Admin";
-  user?: UserDoc;
-  devices?: DeviceDoc[];
-}
+import Admin from "@/model/admin";
+import type { RootRequest } from "../types/types";
+import ProfilePic from "@/model/profilePic";
 
 export const createRootAccount = async (req: RootRequest, res: Response, next: NextFunction) => {
   const session = await startSession();

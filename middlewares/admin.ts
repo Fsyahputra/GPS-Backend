@@ -1,24 +1,14 @@
 import type { NextFunction, Response } from "express";
-import Admin from "../admin/models";
-import Root from "../root/rootModels";
+import Admin from "@/model/admin";
+import Root from "@/model/root";
 import { startSession } from "mongoose";
-import type { AdminDoc } from "../admin/models";
-import type { AccountRequest } from "./common";
 import { HttpError } from "@/utils/HttpError";
-import { ERROR_MESSAGES } from "@/constants";
-import { accountTokenGenerator } from "../admin/service";
+import { DEFAULT_PROFILE_PIC, ERROR_MESSAGES } from "@/constants";
+import { accountTokenGenerator } from "../service/admin";
 import dotenv from "dotenv";
-import { DEFAULT_PROFILE_PIC, ProfilePic } from "../models";
-import { type UserDoc } from "../user/models";
-import { type DeviceDoc } from "@/Device/deviceModels";
+import type { AdminDoc, AdminRequest } from "../types/types";
+import ProfilePic from "@/model/profilePic";
 dotenv.config();
-
-export interface AdminRequest extends Omit<AccountRequest, "account"> {
-  account?: AdminDoc;
-  user?: UserDoc;
-  devices?: DeviceDoc[];
-  AccountType?: "Root" | "Admin";
-}
 
 export const createAdminAccount = async (req: AdminRequest, res: Response, next: NextFunction) => {
   const session = await startSession();

@@ -21,3 +21,8 @@ export const ERROR_MESSAGES = {
   PROFILE_PICTURE_DELETION_FAILED: "Failed to delete profile picture",
   PROFILE_PICTURE_UPDATE_FAILED: "Failed to update profile picture",
 };
+
+export const DEFAULT_PROFILE_PIC: string = "/home/muhammad-fadhil-syahputra/GPS/backend/uploads/default-profilepic.jpg";
+export const MAX_FILE_SIZE: number = 5 * 1024 * 1024; // 5MB
+export const ALLOWED_FILE_TYPES: string[] = ["image/jpeg", "image/png", "image/gif"];
+export const TEST_IMAGE_PATH: string = "/home/muhammad-fadhil-syahputra/GPS/backend/test.jpeg";

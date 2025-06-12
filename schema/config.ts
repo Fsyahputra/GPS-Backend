@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema } from "mongoose";
 
 const CommandSchema = new Schema(
   {
@@ -7,7 +7,6 @@ const CommandSchema = new Schema(
   },
   { _id: false }
 );
-
 const InitCommandSchema = new Schema(
   {
     deviceCheck: { type: CommandSchema, required: true },
@@ -20,7 +19,6 @@ const InitCommandSchema = new Schema(
   },
   { _id: false }
 );
-
 const GPSThresholdSchema = new Schema(
   {
     satellite: { type: Number, required: true },
@@ -29,7 +27,6 @@ const GPSThresholdSchema = new Schema(
   },
   { _id: false }
 );
-
 const ModuleBaudSchema = new Schema(
   {
     moduleName: { type: String, required: true },
@@ -37,7 +34,6 @@ const ModuleBaudSchema = new Schema(
   },
   { _id: false }
 );
-
 const ESPConfigSchema = new Schema(
   {
     timeInterval: { type: Number, required: true },
@@ -46,7 +42,6 @@ const ESPConfigSchema = new Schema(
   },
   { _id: false }
 );
-
 const NetworkConfigSchema = new Schema(
   {
     apn: { type: String, required: true },
@@ -70,7 +65,4 @@ export const ConfigSchema = new Schema(
   },
   { timestamps: true }
 );
-
-const Config = model("Config", ConfigSchema);
-
-export default Config;
+export default ConfigSchema;

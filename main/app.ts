@@ -5,8 +5,8 @@ import { errorHandler } from "./errorHandler";
 import morgan from "morgan";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import accountRoutes from "@/account/routes";
-import deviceRoutes from "@/Device/router";
+import accountRoutes from "@/routes/account";
+import deviceRoutes from "@/routes/device";
 
 const app: Express = express();
 const globalLimiter = rateLimit({

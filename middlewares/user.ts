@@ -1,16 +1,11 @@
-import User from "../user/models";
-import type { AccountRequest } from "./common";
+import User from "@/model/User";
 import type { Response, NextFunction } from "express";
 import { HttpError } from "@/utils/HttpError";
 import { startSession } from "mongoose";
 import { ERROR_MESSAGES } from "@/constants";
-import type { UserDoc } from "../user/models";
-import Device from "@/Device/deviceModels";
-import { ProfilePic } from "../models";
-
-export type UserRequest = Omit<AccountRequest, "account"> & {
-  account?: UserDoc;
-};
+import Device from "@/model/device";
+import type { UserDoc, UserRequest } from "../types/types";
+import ProfilePic from "@/model/profilePic";
 
 export const createAccount = async (req: UserRequest, res: Response, next: NextFunction) => {
   const session = await startSession();

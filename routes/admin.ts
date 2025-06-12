@@ -17,10 +17,11 @@ import {
   validateLoginInput,
   validateDeviceName,
   validateUsername,
-} from "../middlewares/common";
-import { validateRegisterInput } from "../middlewares/common";
-import { createAdminAccount, generateAdminToken, validateAdmin } from "../middlewares/admin";
-import { deleteAdminAccount, determineType, getDevices, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "../middlewares/adminRootShared";
+  determineType,
+  validateRegisterInput,
+} from "@/middlewares/common";
+import { createAdminAccount, generateAdminToken, validateAdmin } from "@/middlewares/admin";
+import { deleteAdminAccount, getDevices, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "@/middlewares/adminRootShared";
 
 const adminAccountRoutes = Router();
 const userRoutes = Router();

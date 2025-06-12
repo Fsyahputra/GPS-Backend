@@ -1,5 +1,4 @@
-import { Schema, model } from "mongoose";
-import type { InferSchemaType, HydratedDocument } from "mongoose";
+import { Schema } from "mongoose";
 
 const DeviceSchema = new Schema(
   {
@@ -22,7 +21,4 @@ const DeviceSchema = new Schema(
   { timestamps: true }
 );
 
-export type DeviceType = InferSchemaType<typeof DeviceSchema>;
-export type DeviceDoc = HydratedDocument<DeviceType>;
-const Device = model<DeviceDoc>("Device", DeviceSchema);
-export default Device;
+export default DeviceSchema;

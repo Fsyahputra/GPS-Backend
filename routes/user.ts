@@ -19,9 +19,9 @@ import {
   validateRole,
   validateToken,
   validateUpdateInput,
-} from "../middlewares/common";
-import { validateAdmin } from "../middlewares/admin";
-import { sendUserAccount, updateUserAccount, registerDevice, createAccount } from "../middlewares/user";
+} from "@/middlewares/common";
+import { validateAdmin } from "@/middlewares/admin";
+import { sendUserAccount, updateUserAccount, registerDevice, createAccount } from "@/middlewares/user";
 
 const userRoutes = Router();
 const deviceRoutes = Router();

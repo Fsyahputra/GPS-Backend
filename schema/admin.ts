@@ -1,7 +1,6 @@
 import { Schema } from "mongoose";
-import type { AccountDoc, AccountType } from "../models";
-import type { InferSchemaType, HydratedDocument } from "mongoose";
-import Account from "../models";
+import Account from "@/model/account";
+import type { AccountDoc, AdminDoc } from "@/types/types";
 
 const AdminSchema = new Schema(
   {
@@ -14,9 +13,6 @@ const AdminSchema = new Schema(
   }
 );
 
-export type AdminType = InferSchemaType<typeof AdminSchema> & AccountType;
-export type AdminDoc = HydratedDocument<AdminType>;
-
 AdminSchema.pre<AdminDoc>("save", async function (next) {
   if (this.isAccepted && this.isModified("isAccepted")) {
     const issuer = (await Account.findById(this.issuedBy)) as AccountDoc | null;
@@ -26,6 +22,4 @@ AdminSchema.pre<AdminDoc>("save", async function (next) {
   }
 });
 
-const Admin = Account.discriminator<AdminDoc>("Admin", AdminSchema);
-
-export default Admin;
+export default AdminSchema;

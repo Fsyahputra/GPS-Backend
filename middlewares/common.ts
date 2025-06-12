@@ -1,30 +1,22 @@
 import rateLimit from "express-rate-limit";
-import { BlacklistToken, DEFAULT_PROFILE_PIC, ProfilePic, type AccountDoc } from "../models";
 import type { Request, Response, NextFunction } from "express";
-import Account from "../models";
-import type { AccountTokenPayload } from "../service";
+import Account from "@/model/account";
+import type { AccountDoc, AccountTokenPayload, UserDoc } from "../types/types";
 import multer, { memoryStorage } from "multer";
-import { accountTokenGenerator, verifyAccountToken, saveFileToDisk, isRoleValid, checkFieldExistence, deleteFileFromDisk } from "../service";
+import { accountTokenGenerator, verifyAccountToken, saveFileToDisk, isRoleValid, checkFieldExistence, deleteFileFromDisk } from "../service/account";
 import { isImageValid } from "@/utils/fileUtils";
-import { updateAccountValidators, registerValidators, loginValidators, deviceNameValidator, type RequiredFields, usernameValidator } from "../validators";
-import { ERROR_MESSAGES } from "@/constants";
+import { updateAccountValidators, registerValidators, loginValidators, deviceNameValidator, type RequiredFields, usernameValidator } from "../validator/validators";
+import { DEFAULT_PROFILE_PIC, ERROR_MESSAGES } from "@/constants";
 import { HttpError } from "@/utils/HttpError";
 import { startSession } from "mongoose";
-import Device, { type DeviceDoc } from "@/Device/deviceModels";
-import type { UserDoc } from "../user/models";
+import Device from "@/model/device";
 import { validationResult } from "express-validator";
+import type { AccountRequest } from "../types/types";
+import BlacklistToken from "@/model/blackListToken";
+import ProfilePic from "@/model/profilePic";
 
 export const upload = multer({ storage: memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 export const UPLOAD_DIR = "/home/muhammad-fadhil-syahputra/GPS/backend/uploads";
-
-export interface AccountRequest extends Request {
-  account?: AccountDoc;
-  file?: Express.Multer.File;
-  filepath?: string;
-  decodedToken?: AccountTokenPayload;
-  devices?: DeviceDoc[];
-  existingAccount?: AccountDoc;
-}
 
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -38,7 +30,7 @@ export const registerLimiter = rateLimit({
   message: ERROR_MESSAGES.TOO_MANY_REQUESTS,
 });
 
-export const handleValidators = (req: Request, res: Response, next: NextFunction) => {
+export const handleValidators = (req: AccountRequest, res: Response, next: NextFunction) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -405,6 +397,17 @@ export const validateExistedAccount = (req: AccountRequest, res: Response, next:
         throw new HttpError(ERROR_MESSAGES.ACCOUNT_ALREADY_EXISTS, 400);
       }
     }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const determineType = (req: AccountRequest, res: Response, next: NextFunction) => {
+  try {
+    const account = req.account;
+    if (!account) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    req.accountType = account.roles === "Root" ? "Root" : "Admin";
     next();
   } catch (error) {
     next(error);

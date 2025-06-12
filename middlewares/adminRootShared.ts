@@ -1,16 +1,13 @@
 import type { NextFunction, Response } from "express";
 import { HttpError } from "@/utils/HttpError";
 import { ERROR_MESSAGES } from "@/constants";
-import { type AdminDoc } from "../admin/models";
-import type { RootRequest } from "./root";
-import type { AdminRequest } from "./admin";
-import User from "../user/models";
+import User from "@/model/User";
 import { startSession } from "mongoose";
-import Root from "../root/rootModels";
+import Root from "@/model/root";
 import mongoose from "mongoose";
-import Device from "@/Device/deviceModels";
-
-type AdmRootRequest = RootRequest & AdminRequest;
+import Device from "@/model/device";
+import type { AdmRootRequest } from "@/types/types";
+import { findAdmin, isAdmin } from "@/middlewares/utils";
 
 export const getUser = async (req: AdmRootRequest, res: Response, next: NextFunction) => {
   try {
@@ -24,21 +21,9 @@ export const getUser = async (req: AdmRootRequest, res: Response, next: NextFunc
   }
 };
 
-const isAdmin = (req: AdmRootRequest): Boolean => (req.AccountType === "Admin" ? true : false);
-
-const adminCheck = (req: AdmRootRequest) => {
-  let admin;
-  if (isAdmin(req)) {
-    admin = req.account as AdminDoc;
-  } else {
-    admin = req.admin as AdminDoc;
-  }
-  return admin;
-};
-
 export const sendAdminAccount = async (req: AdmRootRequest, res: Response, next: NextFunction) => {
   try {
-    const admin = adminCheck(req);
+    const admin = findAdmin(req);
     if (!admin) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
     res.status(200).json({
       username: admin.username,
@@ -72,7 +57,7 @@ export const sendUserAccount = async (req: AdmRootRequest, res: Response, next: 
 
 export const updateAdminAccount = async (req: AdmRootRequest, res: Response, next: NextFunction) => {
   try {
-    const admin = adminCheck(req);
+    const admin = findAdmin(req);
     if (!admin) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
 
     const { firstName, lastName, email } = req.body;
@@ -94,7 +79,7 @@ export const deleteAdminAccount = async (req: AdmRootRequest, res: Response, nex
   session.startTransaction();
 
   try {
-    const admin = adminCheck(req);
+    const admin = findAdmin(req);
 
     if (!admin) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
 
@@ -108,7 +93,7 @@ export const deleteAdminAccount = async (req: AdmRootRequest, res: Response, nex
 
     root.AccReq = root.AccReq.filter((id) => id.toString() !== admin._id.toString());
 
-    if (isAdmin(req)) {
+    if (isAdmin(req.accountType)) {
       admin.updatedBy = admin._id;
       admin.deletedBy = admin._id;
     } else {
@@ -172,17 +157,6 @@ export const getDevices = async (req: AdmRootRequest, res: Response, next: NextF
     if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
     const devices = await Device.find({ owner: user._id });
     req.devices = devices;
-    next();
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const determineType = (req: AdmRootRequest, res: Response, next: NextFunction) => {
-  try {
-    const account = req.account;
-    if (!account) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    req.AccountType = account.roles === "Root" ? "Root" : "Admin";
     next();
   } catch (error) {
     next(error);

@@ -1,25 +1,15 @@
 import jwt from "jsonwebtoken";
 import type { JwtPayload } from "jsonwebtoken";
-import type { AccountDoc } from "./models";
 import dotenv from "dotenv";
 import sharp from "sharp";
 import fs from "fs";
 import path from "path";
 import { HttpError } from "@/utils/HttpError";
-import Account from "./models";
+import Account from "@/model/account";
 import { ERROR_MESSAGES } from "@/constants";
+import type { AccountDoc } from "@/types/types";
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
-
-export interface AccountTokenPayload {
-  id: string;
-  email: string;
-  username: string;
-  role: string;
-  isAccepted?: boolean;
-  exp?: number;
-  iat?: number;
-}
 
 export const accountTokenGenerator = (account: AccountDoc): string => {
   return jwt.sign(
