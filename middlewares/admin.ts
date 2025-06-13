@@ -35,6 +35,7 @@ export const createAdminAccount = async (req: AdminRequest, res: Response, next:
     newAdmin.profilePic = profilePic._id;
 
     const root = await Root.findOne({ username: process.env.ROOT_USERNAME }).session(session);
+
     if (!root) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
 
     root.AccReq.push(newAdmin._id);

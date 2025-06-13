@@ -4,6 +4,7 @@ import {
   authAccount,
   deleteAccount,
   deleteDevice,
+  deleteProfilePic,
   determineType,
   generateToken,
   handleValidators,
@@ -20,24 +21,23 @@ import {
   validateUpdateInput,
   validateUsername,
 } from "@/middlewares/common";
-import { acceptAdminRequest, createRootAccount, getAdmin, rejectAdminRequest, sendRootAccount, updateRootAccount } from "@/middlewares/root";
+import { acceptAdminRequest, createRootAccount, getAdmin, rejectAdminRequest, sendRootAccount, updateRootAccount, validateMasterkey } from "@/middlewares/root";
 import { deleteAdminAccount, getDevices, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "@/middlewares/adminRootShared";
 const rootRoutes = Router();
 const adminRoutes = Router();
 const userRoutes = Router();
 const deviceRoutes = Router();
 
-rootRoutes.use(validateRole(["Root"]));
-rootRoutes.post("/register", registerLimiter, ...validateRegisterInput, createRootAccount);
+rootRoutes.post("/register", registerLimiter, ...validateRegisterInput, validateMasterkey, createRootAccount);
 rootRoutes.post("/login", loginLimiter, validateLoginInput, handleValidators, authAccount, generateToken);
 
 rootRoutes.use(validateToken);
 rootRoutes.use(validateRole(["Root"]));
 rootRoutes.get("/", sendRootAccount);
-rootRoutes.put("/", ...validateUpdateInput, updateRootAccount);
+rootRoutes.put("/", ...validateUpdateInput, validateMasterkey, updateRootAccount);
 rootRoutes.get("/logout", accountLogout);
 rootRoutes.put("/profile-pic", updateProfilePic);
-rootRoutes.delete("/profile-pic", updateProfilePic);
+rootRoutes.delete("/profile-pic", deleteProfilePic);
 
 adminRoutes.get("/", sendAdminAccount);
 adminRoutes.put("/", ...validateUpdateInput, updateAdminAccount);

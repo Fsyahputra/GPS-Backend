@@ -233,7 +233,7 @@ export const validateRegisterInput = [registerValidators(), handleValidators, va
 export const fieldAlreadyExist = (field: "username" | "email") => {
   return async (req: AccountRequest, res: Response, next: NextFunction) => {
     const value = field === "username" ? req.body.username : req.body.email;
-    if (!value) throw new HttpError(ERROR_MESSAGES.FORBIDDEN, 403);
+    if (!value) return next();
 
     try {
       const isExist = await checkFieldExistence(field, value);

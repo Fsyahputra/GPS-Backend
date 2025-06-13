@@ -20,6 +20,7 @@ export const ERROR_MESSAGES = {
   PROFILE_PICTURE_NOT_FOUND: "Profile picture not found",
   PROFILE_PICTURE_DELETION_FAILED: "Failed to delete profile picture",
   PROFILE_PICTURE_UPDATE_FAILED: "Failed to update profile picture",
+  MASTER_KEY_EXISTS: "Master key already exists",
 };
 
 export const DEFAULT_PROFILE_PIC: string = "/home/muhammad-fadhil-syahputra/GPS/backend/uploads/default-profilepic.jpg";

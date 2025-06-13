@@ -14,9 +14,10 @@ import BlacklistToken from "@/model/blackListToken";
 
 dotenv.config({ path: ".test.env" });
 
-const DB_ADDRESS = process.env.DB_ADDRESS || "mongodb://localhost:27017/test";
-const DB_PORT = process.env.DB_PORT || "27017";
-const DB_URI = `mongodb://${DB_ADDRESS}:${DB_PORT}/?replicaSet=GPS-Tracker-Test`;
+const DB_ADDRESS = process.env.DB_ADDRESS_TEST || "mongodb://localhost:27017/test";
+const DB_PORT = process.env.DB_PORT_TEST || "27017";
+const REPLICA_SET = process.env.REPLICA_SET_TEST || "rs0";
+const DB_URI = `mongodb://${DB_ADDRESS}:${DB_PORT}/?replicaSet=${REPLICA_SET}`;
 const originalConsoleError = console.error;
 const BASE_USER_API = "/api/account/user";
 const TEST_IMG_PATH = img;

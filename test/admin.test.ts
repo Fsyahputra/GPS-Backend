@@ -6,18 +6,20 @@ import connectDB from "../main/database";
 import Admin from "@/model/admin";
 import Device from "@/model/device";
 import mongoose from "mongoose";
-import fs from "fs";
+import fs, { lstat } from "fs";
 import { DEFAULT_PROFILE_PIC, TEST_IMAGE_PATH as img } from "@/constants";
 import Root from "@/model/root";
 import type { AdminDoc, DeviceType } from "@/types/types";
 import BlacklistToken from "@/model/blackListToken";
 import ProfilePic from "@/model/profilePic";
 
-dotenv.config({ path: ".test.env" });
+dotenv.config({ path: "/home/muhammad-fadhil-syahputra/GPS/backend/.test.env" });
 
-const DB_ADDRESS = process.env.DB_ADDRESS || "mongodb://localhost:27017/test";
-const DB_PORT = process.env.DB_PORT || "27017";
-const DB_URI = `mongodb://${DB_ADDRESS}:${DB_PORT}/?replicaSet=GPS-Tracker-Test`;
+const DB_ADDRESS = process.env.DB_ADDRESS_TEST || "mongodb://localhost:27017/test";
+console.log(DB_ADDRESS);
+const DB_PORT = process.env.DB_PORT_TEST || "27017";
+const REPLICA_SET = process.env.REPLICA_SET_TEST || "rs0";
+const DB_URI = `mongodb://${DB_ADDRESS}:${DB_PORT}/?replicaSet=${REPLICA_SET}`;
 console.log("Connecting to MongoDB at:", DB_URI);
 const originalConsoleError = console.error;
 const BASE_ADMIN_API = "/api/account/admin";
@@ -133,7 +135,7 @@ describe("Admin Account Tests", () => {
         const adminData = createAdminData();
         const response = await supertest(app).post(`${BASE_ADMIN_API}/register`).send(adminData);
         expect(response.status).toBe(201);
-
+        console.log("from it test", baseRootData.username);
         expect(response.body).toHaveProperty("message", "Admin account created successfully");
 
         const admin = await Admin.findOne({ username: adminData.username });
@@ -328,6 +330,8 @@ describe("Admin Account Tests", () => {
         const response = await supertest(app).put(`${BASE_ADMIN_API}`).set("Authorization", `Bearer ${adminToken}`).send(updatedData);
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty("message", "Admin account updated successfully");
+        const updatedAdmin = await Admin.findOne({ username: updatedData.username });
+        expect(updatedAdmin?.updatedBy?.toString()).toEqual(adminAccount._id.toString());
       });
 
       it("Should update admin account details even with same username as long as its in the same account", async () => {
@@ -359,7 +363,7 @@ describe("Admin Account Tests", () => {
       });
 
       it("should not update admin account with missing required fields", async () => {
-        const response = await supertest(app).put(`${BASE_ADMIN_API}`).set("Authorization", `Bearer ${adminToken}`).send({}).expect(403);
+        const response = await supertest(app).put(`${BASE_ADMIN_API}/`).set("Authorization", `Bearer ${adminToken}`).send({}).expect(400);
         expect(response.body).toHaveProperty("error");
       });
 

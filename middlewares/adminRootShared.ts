@@ -60,12 +60,20 @@ export const updateAdminAccount = async (req: AdmRootRequest, res: Response, nex
     const admin = findAdmin(req);
     if (!admin) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
 
-    const { firstName, lastName, email } = req.body;
+    const { firstName, lastName, email, username } = req.body;
+    if (!req.body || (!firstName && !lastName && !email && !username)) {
+      throw new HttpError("No fields to update provided", 400);
+    }
     admin.firstName = firstName || admin.firstName;
     admin.lastName = lastName || admin.lastName;
     admin.email = email || admin.email;
+    admin.username = username || admin.username;
     admin.updatedAt = new Date();
-    admin.updatedBy = admin._id;
+    if (isAdmin(req.accountType)) {
+      admin.updatedBy = admin._id;
+    } else if (req.accountType === "Root") {
+      admin.updatedBy = req.account?._id;
+    }
 
     await admin.save();
     res.status(200).json({ message: "Admin account updated successfully", admin });
