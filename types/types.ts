@@ -15,7 +15,7 @@ export interface AccountRequest extends Request {
   decodedToken?: AccountTokenPayload;
   devices?: DeviceDoc[];
   existingAccount?: AccountDoc;
-  accountType?: "Root" | "Admin" | "User";
+  accountType?: "Root" | "Admin" | "User" | any;
 }
 
 export interface AdminRequest extends Omit<AccountRequest, "account"> {

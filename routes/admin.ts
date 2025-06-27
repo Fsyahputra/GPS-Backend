@@ -21,7 +21,7 @@ import {
   validateRegisterInput,
 } from "@/middlewares/common";
 import { createAdminAccount, generateAdminToken, validateAdmin } from "@/middlewares/admin";
-import { deleteAdminAccount, getDevices, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "@/middlewares/adminRootShared";
+import { deleteAdminAccount, deleteUserAccount, getDevices, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "@/middlewares/adminRootShared";
 
 const adminAccountRoutes = Router();
 const userRoutes = Router();
@@ -47,7 +47,7 @@ devicesRoutes.delete("/:deviceID", deleteDevice);
 
 userRoutes.get("/", sendUserAccount);
 userRoutes.put("/", ...validateUpdateInput, updateUserAccount);
-userRoutes.delete("/", deleteAccount);
+userRoutes.delete("/", deleteUserAccount);
 
 userRoutes.use("/device/", getDevices, devicesRoutes);
 adminAccountRoutes.use("/user/:username", validateAdmin, validateUsername, getUser, userRoutes);

@@ -100,6 +100,9 @@ export const acceptAdminRequest = async (req: RootRequest, res: Response, next: 
     admin.issuedAt = new Date();
     admin.issuedBy = root._id;
     root.AccReq = root.AccReq.filter((id) => id.toString() !== admin._id.toString());
+    admin.updatedAt = new Date();
+    admin.updatedBy = root._id;
+    admin.isDeleted = false;
     await admin.save({ session });
     await root.save({ session });
     await session.commitTransaction();
@@ -129,7 +132,7 @@ export const rejectAdminRequest = async (req: RootRequest, res: Response, next: 
     admin.issuedBy = root._id;
 
     await root.save({ session });
-    await admin.deleteOne({ session });
+    await admin.save({ session });
     await session.commitTransaction();
     session.endSession();
     res.status(200).json({ message: "Admin request rejected successfully" });

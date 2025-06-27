@@ -234,6 +234,7 @@ export const fieldAlreadyExist = (field: "username" | "email") => {
   return async (req: AccountRequest, res: Response, next: NextFunction) => {
     const value = field === "username" ? req.body.username : req.body.email;
     if (!value) return next();
+    if (req.existingAccount) return next();
 
     try {
       const isExist = await checkFieldExistence(field, value);
@@ -271,7 +272,12 @@ export const deleteAccount = async (req: AccountRequest, res: Response, next: Ne
   try {
     const user = req.account;
     if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    await user.deleteOne();
+    const deletedUser = await Account.findById(user._id);
+    if (!deletedUser) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    deletedUser.isDeleted = true;
+    deletedUser.deletedAt = new Date();
+    deletedUser.deletedBy = user._id;
+    await deletedUser.save();
     res.status(200).json({ message: "User account deleted successfully" });
   } catch (error) {
     next(error);
@@ -322,6 +328,7 @@ export const sendDevices = (req: AccountRequest, res: Response, next: NextFuncti
       name: d.name,
       lastCommand: d.lastCommand,
       lastOnline: d.lastOnline,
+      owner: d.owner ? d.owner.toString() : null,
     }));
 
     res.status(200).json(payload);

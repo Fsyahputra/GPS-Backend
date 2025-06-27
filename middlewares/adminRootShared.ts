@@ -6,8 +6,9 @@ import { startSession } from "mongoose";
 import Root from "@/model/root";
 import mongoose from "mongoose";
 import Device from "@/model/device";
-import type { AdmRootRequest } from "@/types/types";
-import { findAdmin, isAdmin } from "@/middlewares/utils";
+import type { AdmRootRequest, DeviceDoc } from "@/types/types";
+import { findAdmin, findUser, isAdmin } from "@/middlewares/utils";
+import Account from "@/model/account";
 
 export const getUser = async (req: AdmRootRequest, res: Response, next: NextFunction) => {
   try {
@@ -122,32 +123,50 @@ export const deleteAdminAccount = async (req: AdmRootRequest, res: Response, nex
 };
 
 export const updateUserAccount = async (req: AdmRootRequest, res: Response, next: NextFunction) => {
+  const session = await startSession();
+  session.startTransaction();
   try {
     const username = req.user?.username;
     if (!username) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
-    const user = await User.findOne({ username }).populate("devices");
+    const user = await User.findOne({ username }).session(session);
     const deviceIDs = req.body.devices as string[] | undefined;
     if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
     const { firstName, lastName, email } = req.body;
+    const newUsername = req.body.username as string | undefined;
     user.firstName = firstName || user.firstName;
     user.lastName = lastName || user.lastName;
     user.email = email || user.email;
+    user.username = newUsername || user.username;
 
     let notFoundDevices: string[] = [];
     let notFoundDevicesLength: number = 0;
     let addedDevicesCount = 0;
+    let foundDevices: string[] = [];
+    let devices: DeviceDoc[] = [];
 
     if (deviceIDs && deviceIDs.length > 0) {
-      const objectIDs = deviceIDs.map((id) => new mongoose.Types.ObjectId(id));
-      const devices = await Device.find({ _id: { $in: objectIDs } });
-      const foundDeviceSet = new Set(devices.map((device) => device._id.toString()));
+      devices = await Device.find({ deviceID: { $in: deviceIDs } }).session(session);
+      foundDevices = devices.map((device) => device.deviceID);
       addedDevicesCount = devices.length;
-      notFoundDevices = deviceIDs.filter((id) => !foundDeviceSet.has(id));
+      notFoundDevices = deviceIDs.filter((id) => !foundDevices.includes(id));
       notFoundDevicesLength = notFoundDevices.length;
     }
+
+    if (addedDevicesCount > 0) {
+      const existingDevices: string[] = user.devices.map((device) => device._id.toString());
+      const newDevices: string[] = devices.map((device) => device._id.toString());
+      const uniqueDevices: Set<string> = new Set([...existingDevices, ...newDevices]);
+      const ArrayOfUniqueDevices: string[] = Array.from(uniqueDevices);
+      const ArrayOfUniqueDevicesObjectIDs: mongoose.Types.ObjectId[] = ArrayOfUniqueDevices.map((id) => new mongoose.Types.ObjectId(id));
+      user.devices = ArrayOfUniqueDevicesObjectIDs;
+      await Device.updateMany({ _id: { $in: devices.map((device) => device._id) } }, { $set: { owner: user._id } }).session(session);
+    }
+
     user.updatedAt = new Date();
     user.updatedBy = req.account?._id;
-    await user.save();
+    await user.save({ session });
+    await session.commitTransaction();
+    session.endSession();
     res.status(200).json({
       message:
         `User updated successfully. ` +
@@ -155,6 +174,8 @@ export const updateUserAccount = async (req: AdmRootRequest, res: Response, next
         (notFoundDevicesLength > 0 ? ` ${notFoundDevicesLength} device ID${notFoundDevicesLength !== 1 ? "s were" : " was"} not found: ${notFoundDevices.join(", ")}.` : " All provided device IDs were valid."),
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
@@ -166,6 +187,25 @@ export const getDevices = async (req: AdmRootRequest, res: Response, next: NextF
     const devices = await Device.find({ owner: user._id });
     req.devices = devices;
     next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteUserAccount = async (req: AdmRootRequest, res: Response, next: NextFunction) => {
+  try {
+    const user = findUser(req);
+    const u = req.account?._id;
+    if (!u) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    if (!user) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    const deletedUser = await User.findById(user._id);
+    if (!deletedUser) throw new HttpError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND, 404);
+    deletedUser.isDeleted = true;
+    deletedUser.deletedAt = new Date();
+    deletedUser.deletedBy = u;
+    deletedUser.updatedAt = new Date();
+    await deletedUser.save();
+    res.status(200).json({ message: "User account deleted successfully" });
   } catch (error) {
     next(error);
   }

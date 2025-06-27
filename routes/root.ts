@@ -22,7 +22,7 @@ import {
   validateUsername,
 } from "@/middlewares/common";
 import { acceptAdminRequest, createRootAccount, getAdmin, rejectAdminRequest, sendRootAccount, updateRootAccount, validateMasterkey } from "@/middlewares/root";
-import { deleteAdminAccount, getDevices, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "@/middlewares/adminRootShared";
+import { deleteAdminAccount, deleteUserAccount, getDevices, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "@/middlewares/adminRootShared";
 const rootRoutes = Router();
 const adminRoutes = Router();
 const userRoutes = Router();
@@ -49,7 +49,7 @@ rootRoutes.use("/admin/:username", validateUsername, getAdmin, determineType, ad
 
 userRoutes.get("/", sendUserAccount);
 userRoutes.put("/", ...validateUpdateInput, updateUserAccount);
-userRoutes.delete("/", deleteAccount);
+userRoutes.delete("/", deleteUserAccount);
 
 deviceRoutes.get("/", sendDevices);
 deviceRoutes.put("/:deviceID", validateDeviceName, updateDevice);

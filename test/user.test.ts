@@ -329,7 +329,10 @@ describe("User Account Tests", () => {
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty("message", "User account deleted successfully");
       const deletedUser = await User.findOne({ email: user.email });
-      expect(deletedUser).toBeNull();
+      expect(deletedUser).toBeDefined();
+      expect(deletedUser?.isDeleted).toBe(true);
+      expect(deletedUser?.deletedAt).toBeDefined();
+      expect(deletedUser?.deletedBy?.toString()).toBe(user._id.toString());
     });
 
     it("Should return 404 for non-existing user account", async () => {

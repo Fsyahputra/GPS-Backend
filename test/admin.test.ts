@@ -6,7 +6,7 @@ import connectDB from "../main/database";
 import Admin from "@/model/admin";
 import Device from "@/model/device";
 import mongoose from "mongoose";
-import fs, { lstat } from "fs";
+import fs from "fs";
 import { DEFAULT_PROFILE_PIC, TEST_IMAGE_PATH as img } from "@/constants";
 import Root from "@/model/root";
 import type { AdminDoc, DeviceType } from "@/types/types";
@@ -16,7 +16,6 @@ import ProfilePic from "@/model/profilePic";
 dotenv.config({ path: "/home/muhammad-fadhil-syahputra/GPS/backend/.test.env" });
 
 const DB_ADDRESS = process.env.DB_ADDRESS_TEST || "mongodb://localhost:27017/test";
-console.log(DB_ADDRESS);
 const DB_PORT = process.env.DB_PORT_TEST || "27017";
 const REPLICA_SET = process.env.REPLICA_SET_TEST || "rs0";
 const DB_URI = `mongodb://${DB_ADDRESS}:${DB_PORT}/?replicaSet=${REPLICA_SET}`;
