@@ -11,3 +11,14 @@ export const isImageValid = (file: Express.Multer.File): string | null => {
   }
   return null;
 };
+
+export const isConfigFileValid = (file: Express.Multer.File): string | null => {
+  if (!file || !file.mimetype || file.mimetype !== "application/json") {
+    return ERROR_MESSAGES.FILE_TYPE_INVALID;
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    // 5MB limit
+    return ERROR_MESSAGES.FILE_TOO_LARGE;
+  }
+  return null;
+};

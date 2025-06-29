@@ -295,6 +295,8 @@ export const updateDevice = async (req: AccountRequest, res: Response, next: Nex
     if (!device) throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
 
     device.name = req.body.name || device.name;
+    device.updatedAt = new Date();
+    device.updatedBy = req.account?._id;
 
     await device.save({ session });
     await session.commitTransaction();

@@ -1,5 +1,6 @@
 import validator from "validator";
 import { body, param, query, header, cookie, type ValidationChain } from "express-validator";
+import { Command } from "@/types/types";
 
 // === Types ===
 type LocationType = "body" | "param" | "query" | "header" | "cookie";
@@ -18,6 +19,7 @@ export type RequiredFields = {
   firstName?: boolean;
   lastName?: boolean;
   deviceName?: boolean;
+  command?: boolean;
 };
 
 type GeneratorField = Partial<Record<keyof RequiredFields, boolean | ValidatorOptions>>;
@@ -82,6 +84,13 @@ export const deviceNameValidator: ValidationFn = (required, location) => {
   return required ? chain : chain.optional();
 };
 
+export const commandValidator: ValidationFn = (required, location) => {
+  const validCommand = Object.values(Command);
+  const chain = getValidator(location, "command").notEmpty().withMessage("Command is required").isString().withMessage("Command must be a string").isIn(validCommand);
+
+  return required ? chain : chain.optional();
+};
+
 // === Validator Dispatcher Map ===
 const validatorMap: Record<keyof RequiredFields, ValidationFn> = {
   email: emailValidator,
@@ -90,6 +99,7 @@ const validatorMap: Record<keyof RequiredFields, ValidationFn> = {
   firstName: firstNameValidator,
   lastName: lastNameValidator,
   deviceName: deviceNameValidator,
+  command: commandValidator,
 };
 
 // === Generator ===
@@ -131,6 +141,13 @@ export const loginValidators = (requiredFields: RequiredFields): ValidationChain
     password: { required: true },
   };
 
+  return generateValidators(baseFields);
+};
+
+export const commandValidators = (): ValidationChain[] => {
+  const baseFields: GeneratorField = {
+    command: { required: true },
+  };
   return generateValidators(baseFields);
 };
 

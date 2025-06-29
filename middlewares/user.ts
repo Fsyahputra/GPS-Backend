@@ -6,6 +6,7 @@ import { ERROR_MESSAGES } from "@/constants";
 import Device from "@/model/device";
 import type { UserDoc, UserRequest } from "../types/types";
 import ProfilePic from "@/model/profilePic";
+import { generateB64SecretKey } from "@/service/device";
 
 export const createAccount = async (req: UserRequest, res: Response, next: NextFunction) => {
   const session = await startSession();
@@ -97,6 +98,7 @@ export const registerDevice = async (req: UserRequest, res: Response, next: Next
     device.name = `ESP Device ${devicesCount + 1}`;
     device.owner = user._id;
     device.deviceID = deviceID;
+    device.key = generateB64SecretKey();
 
     await device.save({ session: session });
     user.devices.push(device._id);

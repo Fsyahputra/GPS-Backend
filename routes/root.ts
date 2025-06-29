@@ -2,8 +2,6 @@ import { Router } from "express";
 import {
   accountLogout,
   authAccount,
-  deleteAccount,
-  deleteDevice,
   deleteProfilePic,
   determineType,
   generateToken,
@@ -11,7 +9,6 @@ import {
   loginLimiter,
   registerLimiter,
   sendDevices,
-  updateDevice,
   updateProfilePic,
   validateDeviceName,
   validateLoginInput,
@@ -22,7 +19,22 @@ import {
   validateUsername,
 } from "@/middlewares/common";
 import { acceptAdminRequest, createRootAccount, getAdmin, rejectAdminRequest, sendRootAccount, updateRootAccount, validateMasterkey } from "@/middlewares/root";
-import { deleteAdminAccount, deleteUserAccount, getDevices, getUser, sendAdminAccount, sendUserAccount, updateAdminAccount, updateUserAccount } from "@/middlewares/adminRootShared";
+import {
+  deleteAdminAccount,
+  deleteUserAccount,
+  deleteUserDevice,
+  getDevices,
+  getUser,
+  sendAdminAccount,
+  sendCommandToUserDevice,
+  sendUserAccount,
+  updateAdminAccount,
+  updateConfig,
+  updateUserAccount,
+  updateUserDevice,
+  validateCommand,
+  validateConfigFile,
+} from "@/middlewares/adminRootShared";
 const rootRoutes = Router();
 const adminRoutes = Router();
 const userRoutes = Router();
@@ -52,8 +64,10 @@ userRoutes.put("/", ...validateUpdateInput, updateUserAccount);
 userRoutes.delete("/", deleteUserAccount);
 
 deviceRoutes.get("/", sendDevices);
-deviceRoutes.put("/:deviceID", validateDeviceName, updateDevice);
-deviceRoutes.delete("/:deviceID", deleteDevice);
+deviceRoutes.put("/:deviceID", validateDeviceName, updateUserDevice);
+deviceRoutes.delete("/:deviceID", deleteUserDevice);
+deviceRoutes.post("/:deviceID/send-command", ...validateCommand, sendCommandToUserDevice);
+deviceRoutes.put("/:deviceID/config", validateConfigFile, updateConfig);
 
 userRoutes.use("/device/", getDevices, deviceRoutes);
 

@@ -11,6 +11,7 @@ import { DEFAULT_PROFILE_PIC, TEST_IMAGE_PATH as img } from "@/constants";
 import type { DeviceType } from "@/types/types";
 import ProfilePic from "@/model/profilePic";
 import BlacklistToken from "@/model/blackListToken";
+import { generateB64SecretKey } from "@/service/device";
 
 dotenv.config({ path: ".test.env" });
 
@@ -78,6 +79,9 @@ describe("User Account Tests", () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     commandHistory: [] as any,
+    key: generateB64SecretKey(),
+    isDeleted: false,
+    isNewConfig: false,
   };
 
   const createDeviceData = (overrides = {}) => ({

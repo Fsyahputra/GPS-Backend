@@ -24,6 +24,7 @@ app.use(cors());
 
 app.use("/api/account/", accountRoutes);
 app.use("/api/devices/", deviceRoutes);
+app.use("/api/device/:deviceID", deviceRoutes);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ error: "Not Found" });

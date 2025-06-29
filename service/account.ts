@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import Account from "@/model/account";
 import type { AccountDoc } from "@/types/types";
+
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
 

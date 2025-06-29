@@ -5,17 +5,18 @@ import app from "../main/app";
 import connectDB from "../main/database";
 import Admin from "@/model/admin";
 import Device from "@/model/device";
-import mongoose, { Model } from "mongoose";
+import mongoose from "mongoose";
 import fs from "fs";
 import { DEFAULT_PROFILE_PIC, TEST_IMAGE_PATH as img } from "@/constants";
 import Root from "@/model/root";
-import type { AdminDoc, AdminType, DeviceDoc, DeviceType, RootType } from "@/types/types";
+import type { AdminType, DeviceType, RootType } from "@/types/types";
 import BlacklistToken from "@/model/blackListToken";
 import ProfilePic from "@/model/profilePic";
 import Account from "@/model/account";
 import User from "@/model/User";
 import { type UserType } from "@/types/types";
 import { nanoid } from "nanoid";
+import { generateB64SecretKey } from "@/service/device";
 
 dotenv.config({ path: "/home/muhammad-fadhil-syahputra/GPS/backend/.test.env" });
 
@@ -89,6 +90,7 @@ describe("Root Account Tests", () => {
   const baseDeviceData: Partial<DeviceType> = {
     name: "Test Device",
     deviceID: nanoid(10),
+    key: generateB64SecretKey(),
   };
 
   const createDeviceData = (overrides: Partial<DeviceType> = {}): Partial<DeviceType> => {
@@ -991,6 +993,28 @@ describe("Root Account Tests", () => {
       const updatedDevice = await Device.findOne({ deviceID: deviceToUpdate?.deviceID });
       expect(updatedDevice).toBeDefined();
       expect(updatedDevice?.name).toBe(updatedDeviceData.name);
+    });
+
+    it("Should Delete User Device", async () => {
+      const deviceToDeleteId = devicesData[0]?.deviceID;
+      const oldDevicesCount = userAccount?.devices?.length || 0;
+      const response = await supertest(app).delete(`${BASE_ROOT_API}/user/${userAccount?.username}/device/${deviceToDeleteId}`).set("Authorization", `Bearer ${rootToken}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty("message", "Device deleted successfully");
+
+      const deletedDevice = await Device.findOne({ deviceID: deviceToDeleteId });
+      expect(deletedDevice).toBeDefined();
+      expect(deletedDevice?.isDeleted).toBe(true);
+      expect(deletedDevice?.deletedBy?.toString()).toBe((rootAccount as any)._id.toString());
+      expect(deletedDevice?.deletedAt).toBeDefined();
+      expect(deletedDevice?.updatedBy?.toString()).toBe((rootAccount as any)._id.toString());
+      expect(deletedDevice?.updatedAt).toBeDefined();
+      expect(deletedDevice?.owner).toBeNull();
+
+      const updatedUser = await User.findOne({ username: userAccount?.username });
+      expect(updatedUser).toBeDefined();
+      expect(updatedUser?.devices.length).toBe(oldDevicesCount - 1);
+      expect(updatedUser?.devices).not.toContainEqual(deletedDevice?._id);
     });
   });
 });
