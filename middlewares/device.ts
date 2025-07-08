@@ -9,7 +9,6 @@ import { startSession } from "mongoose";
 import Location from "@/model/location";
 
 export const decryptDeviceRequest = async (req: EncryptedDeviceRequest, res: Response, next: NextFunction) => {
-  // this Function Encrypts and Find Device
   try {
     const encryptedData: EncryptedData = {
       iv: req.body.iv,
@@ -27,7 +26,7 @@ export const decryptDeviceRequest = async (req: EncryptedDeviceRequest, res: Res
 
     const decryptedData = decryptRequestData(encryptedData, device.key);
     if (!decryptedData) {
-      throw new HttpError(ERROR_MESSAGES.DECRYPT_FAILED, 500);
+      throw new HttpError(ERROR_MESSAGES.DECRYPT_FAILED, 400);
     }
     req.decryptedData = decryptedData;
     req.device = device;
@@ -81,6 +80,7 @@ export const sendConfigToDevice = async (req: DecryptedDeviceRequest, res: Respo
   const session = await startSession();
   session.startTransaction();
   try {
+    let payload: any = {};
     const device = req.device;
     if (!device) {
       throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
@@ -88,14 +88,21 @@ export const sendConfigToDevice = async (req: DecryptedDeviceRequest, res: Respo
 
     const configId = device.currentConfigId;
     const config = await Config.findById(configId).lean().session(session);
-    const payload = {
-      espConfig: config?.espConfig,
-      initCommand: config?.initCommand,
-      gpsThreshold: config?.gpsThreshold,
-      networkConfig: config?.networkConfig,
-    };
 
-    device.isNewConfig = false;
+    if (device.isNewConfig) {
+      payload = {
+        espConfig: config?.espConfig,
+        initCommand: config?.initCommand,
+        gpsThreshold: config?.gpsThreshold,
+        networkConfig: config?.networkConfig,
+      };
+      device.isNewConfig = false;
+    } else {
+      payload = {
+        message: "No new configuration available",
+      };
+    }
+
     device.currentConfigId = configId;
     await device.save({ session });
     await session.commitTransaction();
@@ -142,8 +149,15 @@ export const saveLocationToDB = async (req: DecryptedDeviceRequest, res: Respons
       throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
     }
     const newLocation = new Location({
-      lat: locationData.lat,
-      lon: locationData.lon,
+      lat: {
+        coord: locationData.lat.coord,
+        dir: locationData.lat.dir,
+      },
+      lon: {
+        coord: locationData.lon.coord,
+        dir: locationData.lon.dir,
+      },
+
       device: device._id,
       owner: ownerId,
       hdop: locationData.hdop,
@@ -171,10 +185,21 @@ export const sendLastCommandToDevice = (req: DecryptedDeviceRequest, res: Respon
     if (!device) {
       throw new HttpError(ERROR_MESSAGES.DEVICE_NOT_FOUND, 404);
     }
+
     const payload = {
       lastCommand: device.lastCommand,
     };
+
+    device.lastCommand = null;
     req.response = payload;
+
+    device.commandHistory.push({
+      command: payload.lastCommand,
+      timestamp: new Date(),
+    });
+
+    device.save();
+
     next();
   } catch (error) {
     next(error);

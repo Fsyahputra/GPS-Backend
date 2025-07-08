@@ -69,6 +69,11 @@ export interface EncryptedData {
   cipherText: string;
 }
 
+export interface EncryptedBufferData {
+  ivBuffer: Buffer;
+  cipherTextBuffer: Buffer;
+}
+
 export enum Command {
   // TODO: Gonna Implement these commands in the future
   START = "start",

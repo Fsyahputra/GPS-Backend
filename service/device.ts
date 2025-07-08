@@ -1,13 +1,13 @@
 import crypto from "crypto";
 import { Buffer } from "buffer";
-import type { EncryptedData } from "@/types/types";
+import type { EncryptedBufferData, EncryptedData } from "@/types/types";
 
-const generateRandomIV = (): Buffer => {
+export const generateRandomIV = (): Buffer => {
   const iv = crypto.randomBytes(16);
   return iv;
 };
 
-const generateSecretKey = (): Buffer => {
+export const generateSecretKey = (): Buffer => {
   const key = crypto.randomBytes(16); // 128 bits for AES-128, 32 bytes for AES-256
   return key;
 };
@@ -18,50 +18,67 @@ export const generateB64SecretKey = (): string => {
   return b64SecretKey;
 };
 
-const encryptData = (data: object, secretKey: string): { iv: Buffer; cipher: Buffer } => {
+const decodeEncryptedDataToBuffer = (encryptedData: EncryptedData): EncryptedBufferData => {
+  const ivBuffer = Buffer.from(encryptedData.iv, "base64");
+  const cipherTextBuffer = Buffer.from(encryptedData.cipherText, "base64");
+  return { ivBuffer, cipherTextBuffer };
+};
+
+const encodeEncryptedDataToBase64 = (encryptedData: EncryptedBufferData): EncryptedData => {
+  const iv = encodeToBase64(encryptedData.ivBuffer);
+  const cipherText = encodeToBase64(encryptedData.cipherTextBuffer);
+  return { iv, cipherText };
+};
+
+export const generateB64IV = (): string => {
   const iv = generateRandomIV();
-  const cipher = crypto.createCipheriv("aes-256-cbc", Buffer.from(secretKey, "hex"), iv);
-  let encrypted = cipher.update(JSON.stringify(data), "utf-8", "hex");
-  encrypted += cipher.final("hex");
-  return { iv, cipher: Buffer.from(encrypted, "hex") };
+  const b64IV = iv.toString("base64");
+  return b64IV;
+};
+
+export const encryptData = (plainText: Buffer, secretKey: Buffer, iv: Buffer): Buffer => {
+  const cipher = crypto.createCipheriv("aes-128-cbc", secretKey, iv);
+  const encrypted = Buffer.concat([cipher.update(plainText), cipher.final()]);
+  return encrypted;
 };
 
 const encodeToBase64 = (buffer: Buffer): string => {
   return buffer.toString("base64");
 };
 
-export const encryptResponseData = (data: Object, secretKey: string): EncryptedData => {
+export const encryptResponseData = (data: Object, b64SecretKey: string): EncryptedData | null => {
   try {
-    const { iv, cipher } = encryptData(data, secretKey);
-    const decodedIV = encodeToBase64(iv);
-    const decodedCipher = encodeToBase64(cipher);
-    const payload: EncryptedData = {
-      iv: decodedIV,
-      cipherText: decodedCipher,
+    const secretKey = Buffer.from(b64SecretKey, "base64");
+    const iv = generateRandomIV();
+    const plainText = Buffer.from(JSON.stringify(data));
+    const cipherText = encryptData(plainText, secretKey, iv);
+    const encryptedData: EncryptedBufferData = {
+      ivBuffer: iv,
+      cipherTextBuffer: cipherText,
     };
-    return payload;
+    const encryptedDataB64 = encodeEncryptedDataToBase64(encryptedData);
+    return encryptedDataB64;
   } catch (error) {
-    console.error("Encryption failed:", error);
-    throw new Error("Encryption failed");
+    return null;
   }
 };
 
-const decryptData = (data: Object, secretKey: string, iv: Buffer): Object => {
-  const decipher = crypto.createDecipheriv("aes-128-cbc", Buffer.from(secretKey, "hex"), iv);
-  const dataStr = JSON.stringify(data);
-  let decrypted = decipher.update(dataStr, "hex", "utf-8");
-  decrypted += decipher.final("utf-8");
-  return JSON.parse(decrypted);
+export const decryptData = (cipherTextData: Buffer, secretKey: Buffer, iv: Buffer): Buffer => {
+  const decipher = crypto.createDecipheriv("aes-128-cbc", secretKey, iv);
+  const decrypted = Buffer.concat([decipher.update(cipherTextData), decipher.final()]);
+  return decrypted;
 };
 
-export const decryptRequestData = (encryptedData: EncryptedData, secretKey: string): Object => {
+export const decryptRequestData = (encryptedData: EncryptedData, b64SecretKey: string): Object | null => {
   try {
-    const iv = Buffer.from(encryptedData.iv, "base64");
-    const cipherText = Buffer.from(encryptedData.cipherText, "base64");
-    const data = { iv, cipherText };
-    return decryptData(data, secretKey, iv);
+    const secretKey = Buffer.from(b64SecretKey, "base64");
+    const { ivBuffer, cipherTextBuffer } = decodeEncryptedDataToBuffer(encryptedData);
+    const data = decryptData(cipherTextBuffer, secretKey, ivBuffer);
+    const dataString = data.toString("utf-8");
+    const decryptedData = JSON.parse(dataString);
+    return decryptedData;
   } catch (error) {
     console.error("Decryption failed:", error);
-    throw new Error("Decryption failed");
+    return null;
   }
 };

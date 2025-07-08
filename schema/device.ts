@@ -9,7 +9,7 @@ const DeviceSchema = new Schema(
     owner: { type: Schema.Types.ObjectId, default: null, ref: "Account", required: false },
     currentConfigId: { type: Schema.Types.ObjectId, ref: "Config", required: false }, //TODO: gonna Make this required, and make the default value to be defaultConfig
     isNewConfig: { type: Boolean, default: false, required: true },
-    configHistoryIds: [{ type: Schema.Types.ObjectId, ref: "Config", default: [] }],
+    configHistoryIds: [{ type: Schema.Types.ObjectId, ref: "Config", default: [], required: false }],
     softwareVersion: { type: String, required: false },
     isDeleted: { type: Boolean, default: false, required: true },
     deletedAt: { type: Date, default: null, required: false },

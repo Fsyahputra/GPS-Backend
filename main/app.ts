@@ -23,7 +23,6 @@ app.use(helmet());
 app.use(cors());
 
 app.use("/api/account/", accountRoutes);
-app.use("/api/devices/", deviceRoutes);
 app.use("/api/device/:deviceID", deviceRoutes);
 
 app.use((req: Request, res: Response) => {

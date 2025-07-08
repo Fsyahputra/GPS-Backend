@@ -94,6 +94,9 @@ describe("Admin Account Tests", () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     commandHistory: [] as any,
+    isDeleted: false,
+    isNewConfig: false,
+    key: "test-device-key",
   };
 
   const createDeviceData = (overrides = {}) => ({

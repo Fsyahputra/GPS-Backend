@@ -66,6 +66,7 @@ export const ConfigSchema = new Schema(
   },
   { timestamps: true }
 );
+
 export default ConfigSchema;
 
 const CommandZodSchema = z.object({
